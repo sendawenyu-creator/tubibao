@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaLuLa-US 父ASIN 对比 2024 vs 2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0c10;
+    --surface: #141418;
+    --border: #222230;
+    --c24: #f5c842;
+    --c25: #4f9cf9;
+    --cpos: #3dd68c;
+    --cneg: #ff5f5f;
+    --text: #e8e8f0;
+    --muted: #5a5a72;
+    --accent: #7c6fff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px 60px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 36px; flex-wrap: wrap; gap: 16px;
+  }
+  .header h1 {
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 800; letter-spacing: -1px;
+    line-height: 1.1;
+  }
+  .header h1 span { color: var(--accent); }
+  .header p { color: var(--muted); font-size: .8rem; letter-spacing: 2px; text-transform: uppercase; margin-top: 6px; }
+  .legend {
+    display: flex; gap: 18px; align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ── KPI strip ── */
+  .kpis {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+    gap: 12px; margin-bottom: 36px;
+  }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .kpi .lbl { font-size: .68rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .kpi .val { font-family: 'DM Mono', monospace; font-size: 1.5rem; font-weight: 500; margin: 6px 0 4px; }
+  .kpi .chg { font-size: .75rem; font-weight: 700; }
+  .chg.pos { color: var(--cpos); }
+  .chg.neg { color: var(--cneg); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab {
+    padding: 7px 18px; border-radius: 40px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'Syne', sans-serif; font-size: .78rem;
+    cursor: pointer; transition: all .2s; letter-spacing: 1px;
+  }
+  .tab.active, .tab:hover {
+    border-color: var(--accent); color: var(--text);
+    background: rgba(124,111,255,.12);
+  }
+
+  /* ── Chart card ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; margin-bottom: 20px;
+    display: none;
+  }
+  .card.active { display: block; }
+  .card-title { font-size: .68rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+  .card-title strong { color: var(--text); font-size: .95rem; letter-spacing: 0; display: block; margin-bottom: 2px; font-weight: 700; }
+
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { max-height: 380px; }
+
+  /* ── Scatter / Bubble note ── */
+  .note { font-size: .7rem; color: var(--muted); margin-top: 14px; text-align: right; }
+
+  /* ── Summary table ── */
+  .sum-wrap { overflow-x: auto; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: .75rem; }
+  thead th {
+    background: #1a1a24; color: var(--muted);
+    padding: 8px 12px; text-align: right;
+    font-weight: 400; font-size: .68rem; letter-spacing: 1px;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  thead th:first-child { text-align: left; }
+  tbody td {
+    padding: 8px 12px; text-align: right; border-bottom: 1px solid #1a1a24;
+    font-family: 'DM Mono', monospace; white-space: nowrap;
+  }
+  tbody td:first-child { text-align: left; font-family: 'Syne',sans-serif; color: var(--accent); font-size: .72rem; }
+  tbody tr:hover td { background: rgba(255,255,255,.02); }
+  .tpos { color: var(--cpos); }
+  .tneg { color: var(--cneg); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>LaLuLa-US<br><span>父ASIN</span> 数据对比</h1>
+    <p>2024 vs 2025 · 按销量排序</p>
+  </div>
+  <div>
+    <div class="legend">
+      <div class="legend-item"><div class="dot" style="background:var(--c24)"></div>2024</div>
+      <div class="legend-item"><div class="dot" style="background:var(--c25)"></div>2025</div>
+    </div>
+  </div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('sales')">📦 销量</button>
+  <button class="tab" onclick="show('returns')">↩ 退款量</button>
+  <button class="tab" onclick="show('rr')">📉 退货率</button>
+  <button class="tab" onclick="show('revenue')">💰 销售额</button>
+  <button class="tab" onclick="show('profit')">📈 利润</button>
+  <button class="tab" onclick="show('overview')">🔍 综合对比</button>
+  <button class="tab" onclick="show('table')">📋 数据表</button>
+</div>
+
+<div class="card active" id="card-sales">
+  <div class="card-title"><strong>销量对比</strong>各父ASIN · 2024 vs 2025</div>
+  <div class="chart-wrap"><canvas id="salesChart"></canvas></div>
+</div>
+
+<div class="card" id="card-returns">
+  <div class="card-title"><strong>退款量对比</strong>各父ASIN · 2024 vs 2025</div>
+  <div class="chart-wrap"><canvas id="retChart"></canvas></div>
+</div>
+
+<div class="card" id="card-rr">
+  <div class="card-title"><strong>退货率对比</strong>各父ASIN · 2024 vs 2025 (%)</div>
+  <div class="chart-wrap"><canvas id="rrChart"></canvas></div>
+</div>
+
+<div class="card" id="card-revenue">
+  <div class="card-title"><strong>销售额对比</strong>各父ASIN · 2024 vs 2025 ($)</div>
+  <div class="chart-wrap"><canvas id="revChart"></canvas></div>
+</div>
+
+<div class="card" id="card-profit">
+  <div class="card-title"><strong>利润对比</strong>各父ASIN · 2024 vs 2025 ($)</div>
+  <div class="chart-wrap"><canvas id="profitChart"></canvas></div>
+</div>
+
+<div class="card" id="card-overview">
+  <div class="card-title"><strong>综合气泡图</strong>销售额(X) × 利润(Y) · 气泡大小=销量 · 2025数据</div>
+  <div class="chart-wrap"><canvas id="bubbleChart"></canvas></div>
+  <p class="note">气泡大小 = 2025销量 · 颜色区分父ASIN</p>
+</div>
+
+<div class="card" id="card-table">
+  <div class="card-title"><strong>完整数据汇总</strong>按父ASIN</div>
+  <div class="sum-wrap"><table id="sumTable"></table></div>
+</div>
+
+<script>
+const raw = [
+  {p:"B0F8BK47GL",skus:8,s24:861,s25:1277,ret24:107,ret25:127,rr24:12.4,rr25:9.9,rev24:423853,rev25:458490,p24:62985,p25:61901},
+  {p:"B0G6BNW635",skus:8,s24:809,s25:1159,ret24:89,ret25:119,rr24:11.0,rr25:10.3,rev24:318299,rev25:682774,p24:10553,p25:114036},
+  {p:"B0G5Z4VSRK",skus:9,s24:19,s25:649,ret24:1,ret25:114,rr24:5.3,rr25:17.6,rev24:9543,rev25:377352,p24:833,p25:60610},
+  {p:"B0GGQMPXL5",skus:6,s24:140,s25:489,ret24:29,ret25:33,rr24:20.7,rr25:6.7,rev24:81600,rev25:264840,p24:3012,p25:12924},
+  {p:"B09N1FWT9Q",skus:2,s24:335,s25:284,ret24:59,ret25:39,rr24:17.6,rr25:13.7,rev24:118735,rev25:143658,p24:14731,p25:19497},
+  {p:"B0FNN9Z1FM",skus:3,s24:23,s25:199,ret24:0,ret25:61,rr24:0.0,rr25:30.7,rev24:11070,rev25:109358,p24:-1347,p25:-12869},
+  {p:"B0CZ44HC87",skus:1,s24:132,s25:126,ret24:26,ret25:26,rr24:19.7,rr25:20.6,rev24:68803,rev25:73478,p24:6873,p25:-4783},
+  {p:"B0GLQT9BMC",skus:3,s24:0,s25:112,ret24:0,ret25:33,rr24:0,rr25:29.5,rev24:0,rev25:62667,p24:0,p25:-2112},
+  {p:"B0FNPW4KSJ",skus:1,s24:9,s25:68,ret24:2,ret25:19,rr24:22.2,rr25:27.9,rev24:5177,rev25:32839,p24:-2411,p25:2470},
+  {p:"B0FW4JC4KT",skus:1,s24:21,s25:56,ret24:9,ret25:2,rr24:42.9,rr25:3.6,rev24:7101,rev25:21988,p24:-4932,p25:465},
+  {p:"B0D2MQYH3K",skus:1,s24:60,s25:55,ret24:8,ret25:10,rr24:13.3,rr25:18.2,rev24:27936,rev25:28964,p24:-7640,p25:7604},
+  {p:"B0FBFN1MNG",skus:1,s24:0,s25:48,ret24:0,ret25:8,rr24:0,rr25:16.7,rev24:0,rev25:23264,p24:0,p25:2674},
+  {p:"B0FBFWJF6N",skus:1,s24:0,s25:29,ret24:0,ret25:4,rr24:0,rr25:13.8,rev24:0,rev25:13112,p24:0,p25:1803},
+  {p:"B0C4NYWRZH",skus:1,s24:30,s25:11,ret24:6,ret25:0,rr24:20.0,rr25:0,rev24:14756,rev25:6235,p24:-522,p25:607},
+  {p:"B0FBFR9T7N",skus:1,s24:0,s25:24,ret24:0,ret25:7,rr24:0,rr25:29.2,rev24:0,rev25:11347,p24:0,p25:708},
+  {p:"B0FY3Q9ZRJ",skus:2,s24:0,s25:11,ret24:0,ret25:3,rr24:0,rr25:27.3,rev24:0,rev25:10044,p24:0,p25:651},
+  {p:"B0DHSP41WZ",skus:1,s24:19,s25:1,ret24:7,ret25:3,rr24:36.8,rr25:0,rev24:5850,rev25:552,p24:-9977,p25:-1627},
+  {p:"B0FR56CF7Y",skus:1,s24:0,s25:8,ret24:0,ret25:0,rr24:0,rr25:0,rev24:0,rev25:7230,p24:0,p25:2820},
+  {p:"B0CCMS1FK1",skus:1,s24:19,s25:0,ret24:1,ret25:0,rr24:5.3,rr25:0,rev24:10915,rev25:0,p24:-4813,p25:0},
+  {p:"B0CCMS4DDV",skus:1,s24:21,s25:0,ret24:3,ret25:0,rr24:14.3,rr25:0,rev24:11624,rev25:0,p24:-2410,p25:0},
+];
+
+// Filter to meaningful ones (s24+s25 > 0), top 12 by combined sales for charts
+const meaningful = raw.filter(d => d.s24+d.s25 > 5).sort((a,b) => (b.s25+b.s24)-(a.s25+a.s24));
+const topData = meaningful.slice(0, 14);
+const labels = topData.map(d => d.p.slice(-8)); // last 8 chars for brevity
+
+// KPIs
+const t24s = raw.reduce((a,d)=>a+d.s24,0);
+const t25s = raw.reduce((a,d)=>a+d.s25,0);
+const t24r = raw.reduce((a,d)=>a+d.rev24,0);
+const t25r = raw.reduce((a,d)=>a+d.rev25,0);
+const t24p = raw.reduce((a,d)=>a+d.p24,0);
+const t25p = raw.reduce((a,d)=>a+d.p25,0);
+const t24ret = raw.reduce((a,d)=>a+d.ret24,0);
+const t25ret = raw.reduce((a,d)=>a+d.ret25,0);
+
+function chgStr(a,b) {
+  if(a===0) return '<span class="chg pos">NEW</span>';
+  const p = ((b-a)/Math.abs(a)*100).toFixed(1);
+  const cls = p>=0?'pos':'neg';
+  return `<span class="chg ${cls}">${p>=0?'+':''}${p}%</span>`;
+}
+function fmtK(v) {
+  if(Math.abs(v)>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
+  if(Math.abs(v)>=1000) return '$'+(v/1000).toFixed(1)+'K';
+  return '$'+Math.round(v);
+}
+
+document.getElementById('kpis').innerHTML = `
+  <div class="kpi"><div class="lbl">总销量 2024</div><div class="val">${t24s.toLocaleString()}</div></div>
+  <div class="kpi"><div class="lbl">总销量 2025</div><div class="val">${t25s.toLocaleString()}</div>${chgStr(t24s,t25s)}</div>
+  <div class="kpi"><div class="lbl">总退款量 2024</div><div class="val">${t24ret}</div></div>
+  <div class="kpi"><div class="lbl">总退款量 2025</div><div class="val">${t25ret}</div>${chgStr(t24ret,t25ret)}</div>
+  <div class="kpi"><div class="lbl">总销售额 2024</div><div class="val">${fmtK(t24r)}</div></div>
+  <div class="kpi"><div class="lbl">总销售额 2025</div><div class="val">${fmtK(t25r)}</div>${chgStr(t24r,t25r)}</div>
+  <div class="kpi"><div class="lbl">总利润 2024</div><div class="val">${fmtK(t24p)}</div></div>
+  <div class="kpi"><div class="lbl">总利润 2025</div><div class="val">${fmtK(t25p)}</div>${chgStr(t24p,t25p)}</div>
+`;
+
+// Chart defaults
+Chart.defaults.color = '#5a5a72';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 10;
+
+const C24 = '#f5c842';
+const C25 = '#4f9cf9';
+const CPOS = '#3dd68c';
+const CNEG = '#ff5f5f';
+
+const baseOpts = (fmt='') => ({
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: { labels: { color:'#888', font:{size:11}, boxWidth:12, padding:16 } },
+    tooltip: {
+      backgroundColor: '#1a1a24', borderColor: '#333', borderWidth:1,
+      titleColor:'#aaa', bodyColor:'#fff', padding:10,
+      callbacks: fmt ? { label: ctx => `${ctx.dataset.label}: ${fmt==='$' ? '$'+Math.round(ctx.raw).toLocaleString() : ctx.raw+(fmt==='%'?'%':'')}` } : {}
+    }
+  },
+  scales: {
+    x: { ticks:{color:'#5a5a72',maxRotation:35,font:{size:9}}, grid:{color:'rgba(255,255,255,0.04)'} },
+    y: { ticks:{color:'#5a5a72',font:{size:9}}, grid:{color:'rgba(255,255,255,0.04)'} }
+  }
+});
+
+function barChart(id, d24, d25, label24, label25, fmt='') {
+  new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: label24, data: d24,
+          backgroundColor: C24+'55', borderColor: C24, borderWidth:1.5, borderRadius:4 },
+        { label: label25, data: d25,
+          backgroundColor: C25+'55', borderColor: C25, borderWidth:1.5, borderRadius:4 },
+      ]
+    },
+    options: baseOpts(fmt)
+  });
+}
+
+// Profit chart: color bars by value
+function profitChart(id, d24, d25) {
+  new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'2024利润', data:d24,
+          backgroundColor: d24.map(v=>v>=0?C24+'55':CNEG+'55'),
+          borderColor: d24.map(v=>v>=0?C24:CNEG), borderWidth:1.5, borderRadius:4 },
+        { label:'2025利润', data:d25,
+          backgroundColor: d25.map(v=>v>=0?CPOS+'55':CNEG+'55'),
+          borderColor: d25.map(v=>v>=0?CPOS:CNEG), borderWidth:1.5, borderRadius:4 },
+      ]
+    },
+    options: {
+      ...baseOpts('$'),
+      scales: {
+        ...baseOpts().scales,
+        y: { ...baseOpts().scales.y,
+          ticks: { ...baseOpts().scales.y.ticks,
+            callback: v => '$'+(v>=1000?(v/1000).toFixed(0)+'K':v) }
+        }
+      }
+    }
+  });
+}
+
+barChart('salesChart', topData.map(d=>d.s24), topData.map(d=>d.s25), '2024销量','2025销量');
+barChart('retChart',   topData.map(d=>d.ret24), topData.map(d=>d.ret25), '2024退款量','2025退款量');
+barChart('rrChart',    topData.map(d=>d.rr24), topData.map(d=>d.rr25), '2024退货率%','2025退货率%', '%');
+barChart('revChart',   topData.map(d=>d.rev24), topData.map(d=>d.rev25), '2024销售额','2025销售额', '$');
+profitChart('profitChart', topData.map(d=>d.p24), topData.map(d=>d.p25));
+
+// Bubble chart: rev25 x p25, size = s25
+const PALETTE = ['#4f9cf9','#f5c842','#3dd68c','#ff5f5f','#b57bee','#ff9f40','#4bc0c0','#ff6384','#36a2eb','#c9cbcf','#fd7f6f','#7eb0d5','#b2e061','#bd7ebe'];
+new Chart(document.getElementById('bubbleChart'), {
+  type: 'bubble',
+  data: {
+    datasets: topData.map((d,i) => ({
+      label: d.p.slice(-8),
+      data: [{ x: d.rev25/1000, y: d.p25/1000, r: Math.max(5, Math.sqrt(d.s25)*2.2) }],
+      backgroundColor: PALETTE[i%PALETTE.length]+'99',
+      borderColor: PALETTE[i%PALETTE.length],
+      borderWidth: 1.5,
+    }))
+  },
+  options: {
+    responsive:true,
+    plugins: {
+      legend: { labels:{color:'#888',font:{size:10},boxWidth:10,padding:10} },
+      tooltip: {
+        backgroundColor:'#1a1a24', borderColor:'#333', borderWidth:1,
+        callbacks: {
+          label: ctx => {
+            const d = topData[ctx.datasetIndex];
+            return [`${d.p}`, `销售额: $${(ctx.raw.x).toFixed(1)}K`, `利润: $${(ctx.raw.y).toFixed(1)}K`, `销量: ${d.s25}`];
+          }
+        }
+      }
+    },
+    scales: {
+      x: { title:{display:true,text:'2025销售额 ($K)',color:'#888'}, ticks:{color:'#5a5a72'}, grid:{color:'rgba(255,255,255,0.04)'} },
+      y: { title:{display:true,text:'2025利润 ($K)',color:'#888'}, ticks:{color:'#5a5a72'}, grid:{color:'rgba(255,255,255,0.04)'},
+           afterBuildTicks: axis => { axis.chart.options.scales.y.min = Math.min(axis.chart.options.scales.y.min||0, -20); }
+         }
+    }
+  }
+});
+
+// Summary table
+const fmtN = v => v.toLocaleString();
+const fmtD = v => (v>=0?'+':'')+v.toLocaleString();
+const pctChg = (a,b) => a===0 ? 'NEW' : ((b-a)/Math.abs(a)*100).toFixed(1)+'%';
+const cls = v => v>0?'tpos':v<0?'tneg':'';
+
+document.getElementById('sumTable').innerHTML = `
+<thead><tr>
+  <th>父ASIN</th><th>SKU数</th>
+  <th>销量24</th><th>销量25</th><th>销量变化</th>
+  <th>退款24</th><th>退款25</th>
+  <th>退货率24</th><th>退货率25</th>
+  <th>销售额24</th><th>销售额25</th><th>销售额变化</th>
+  <th>利润24</th><th>利润25</th><th>利润变化</th>
+</tr></thead>
+<tbody>
+${meaningful.map(d => `<tr>
+  <td>${d.p}</td><td>${d.skus}</td>
+  <td>${fmtN(d.s24)}</td><td>${fmtN(d.s25)}</td>
+  <td class="${cls(d.s25-d.s24)}">${pctChg(d.s24,d.s25)}</td>
+  <td>${d.ret24}</td><td>${d.ret25}</td>
+  <td>${d.rr24}%</td><td>${d.rr25}%</td>
+  <td>$${fmtN(d.rev24)}</td><td>$${fmtN(d.rev25)}</td>
+  <td class="${cls(d.rev25-d.rev24)}">${pctChg(d.rev24,d.rev25)}</td>
+  <td class="${cls(d.p24)}">$${fmtN(d.p24)}</td>
+  <td class="${cls(d.p25)}">$${fmtN(d.p25)}</td>
+  <td class="${cls(d.p25-d.p24)}">${fmtD(d.p25-d.p24)}</td>
+</tr>`).join('')}
+</tbody>`;
+
+// Tab switching
+function show(name) {
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('card-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
