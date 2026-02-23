@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>月度数据对比图表</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080d18;
+    --surface: #0f1a2e;
+    --surface2: #162236;
+    --border: rgba(255,255,255,0.06);
+    --accent: #4fc3f7;
+    --gold: #ffca28;
+    --green: #69f0ae;
+    --red: #ff6b6b;
+    --purple: #ce93d8;
+    --text: #dce8f8;
+    --muted: #546e8a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    min-height: 100vh;
+    padding: 28px 20px 48px;
+    background-image:
+      radial-gradient(ellipse at 10% 0%, rgba(79,195,247,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(206,147,216,0.05) 0%, transparent 55%);
+  }
+  header { text-align:center; margin-bottom:36px; }
+  header h1 {
+    font-family:'Bebas Neue', sans-serif;
+    font-size: clamp(2.2rem,5vw,3.6rem);
+    letter-spacing:5px;
+    background: linear-gradient(100deg, var(--accent), var(--purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip:text;
+  }
+  header p { color:var(--muted); font-size:.8rem; letter-spacing:3px; text-transform:uppercase; margin-top:5px; }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    max-width: 1100px;
+    margin: 0 auto 32px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::after {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  .kpi .label { font-size:.65rem; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+  .kpi .val { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--accent); letter-spacing:1px; }
+  .kpi .growth { font-size:.75rem; margin-top:4px; }
+  .kpi .growth.up { color:var(--green); }
+  .kpi .growth.dn { color:var(--red); }
+
+  .tabs {
+    display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:28px;
+  }
+  .tab {
+    padding:7px 18px; border-radius:50px; border:1px solid var(--muted);
+    background:transparent; color:var(--muted); font-family:'Noto Sans SC',sans-serif;
+    font-size:.78rem; cursor:pointer; transition:all .2s; letter-spacing:1px;
+  }
+  .tab.active, .tab:hover { border-color:var(--accent); color:var(--accent); background:rgba(79,195,247,0.08); }
+
+  .view { display:none; }
+  .view.active { display:block; }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 20px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    opacity:.6;
+  }
+  .chart-card.wide { grid-column: 1 / -1; }
+  .chart-card h2 {
+    font-size:.72rem; letter-spacing:2px; text-transform:uppercase;
+    color:var(--muted); margin-bottom:14px;
+  }
+  .chart-card h2 em { color:var(--accent); font-style:normal; font-weight:700; }
+  canvas { max-height: 280px; }
+  .wide canvas { max-height: 320px; }
+
+  .month-table {
+    width:100%; border-collapse:collapse; font-size:.78rem;
+  }
+  .month-table th {
+    color:var(--muted); font-weight:400; letter-spacing:1px; text-transform:uppercase;
+    padding:8px 10px; border-bottom:1px solid var(--border); text-align:right;
+  }
+  .month-table th:first-child { text-align:left; }
+  .month-table td { padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:right; }
+  .month-table td:first-child { text-align:left; color:var(--accent); font-weight:700; }
+  .month-table tr:last-child td { border-bottom:none; }
+  .up { color:var(--green); }
+  .dn { color:var(--red); }
+
+  @media(max-width:700px) {
+    .charts-grid { grid-template-columns:1fr; }
+    .chart-card.wide { grid-column:1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>月度数据对比分析</h1>
+  <p>2024 vs 2025 · 1月—12月 全年趋势</p>
+</header>
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="label">总销量增长</div>
+    <div class="val">+8,360</div>
+    <div class="growth up">↑ +72.1%</div>
+  </div>
+  <div class="kpi">
+    <div class="label">销售额增长</div>
+    <div class="val">+56.6%</div>
+    <div class="growth up">↑ ¥2.62M</div>
+  </div>
+  <div class="kpi">
+    <div class="label">利润增长</div>
+    <div class="val">+1540.6%</div>
+    <div class="growth up">↑ ¥531,820</div>
+  </div>
+  <div class="kpi">
+    <div class="label">退货率变化</div>
+    <div class="val">-1.1%</div>
+    <div class="growth up">↓ 改善</div>
+  </div>
+  <div class="kpi">
+    <div class="label">ROI 变化</div>
+    <div class="val">-5.5%</div>
+    <div class="growth dn">↓ 39.3%</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('sales')">销量趋势</button>
+  <button class="tab" onclick="showTab('revenue')">销售额</button>
+  <button class="tab" onclick="showTab('profit')">利润 & 利润率</button>
+  <button class="tab" onclick="showTab('roi')">ROI & 退货率</button>
+  <button class="tab" onclick="showTab('table')">数据表格</button>
+</div>
+
+<div id="tab-sales" class="view active">
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <h2>月度销量趋势 <em>2024 vs 2025</em></h2>
+      <canvas id="salesLine"></canvas>
+    </div>
+    <div class="chart-card">
+      <h2>月度销量对比 <em>柱状图</em></h2>
+      <canvas id="salesBar"></canvas>
+    </div>
+    <div class="chart-card">
+      <h2>销量增长率 <em>逐月</em></h2>
+      <canvas id="salesGrowthBar"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="tab-revenue" class="view">
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <h2>月度销售额趋势 <em>2024 vs 2025</em></h2>
+      <canvas id="revLine"></canvas>
+    </div>
+    <div class="chart-card wide">
+      <h2>月度销售额增长 <em>¥</em></h2>
+      <canvas id="revGrowthBar"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="tab-profit" class="view">
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <h2>月度利润对比 <em>¥</em></h2>
+      <canvas id="profitBar"></canvas>
+    </div>
+    <div class="chart-card">
+      <h2>利润率趋势 <em>%</em></h2>
+      <canvas id="profitRateLine"></canvas>
+    </div>
+    <div class="chart-card">
+      <h2>利润增长率 <em>逐月</em></h2>
+      <canvas id="profitGrowthBar"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="tab-roi" class="view">
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <h2>ROI 月度趋势 <em>2024 vs 2025</em></h2>
+      <canvas id="roiLine"></canvas>
+    </div>
+    <div class="chart-card wide">
+      <h2>退货率月度趋势 <em>2024 vs 2025</em></h2>
+      <canvas id="returnRateLine"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="tab-table" class="view">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div class="chart-card">
+      <h2>完整月度数据 <em>对比</em></h2>
+      <div style="overflow-x:auto">
+        <table class="month-table" id="dataTable"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+const d = {
+  sales2024:      [925, 815, 864, 792, 824, 722, 1151, 947, 821, 1167, 1223, 1337],
+  sales2025:      [1511,1126,1617,1184,1288,1196,1710, 1856,1930,2404, 2243, 1883],
+  return2024:     [167, 118, 113, 109, 109, 122, 132,  149, 111, 129,  121,  130],
+  return2025:     [196, 152, 175, 205, 168, 152, 185,  192, 206, 273,  263,  214],
+  returnRate2024: [18.1,14.5,13.1,13.8,13.2,16.9,11.5,15.7,13.5,11.1, 9.9,  9.7],
+  returnRate2025: [13.0,13.5,10.8,17.3,13.0,12.7,10.8,10.3,10.7,11.4,11.7, 11.4],
+  profit2024:     [-11111.47,6250.69,40039.19,28526.14,23341.12,-15821.80,-21697.11,-4864.82,8267.46,-21245.07,-4588.52,7425.05],
+  profit2025:     [79602.29,40682.86,62671.66,34046.32,29056.02,6633.09,22523.47,39308.47,56624.94,60221.54,45680.97,89289.16],
+  profitRate2024: [4.4, 9.4, 18.9,16.4,14.9, 3.0,  3.5,  6.5, 10.3, 3.4,  7.4,  9.5],
+  profitRate2025: [14.8, 9.1,11.5, 8.2, 6.9,  1.5,  3.7,  6.2,  7.6, 6.8,  5.5, 12.6],
+  roi2024:        [20.2,43.1,126.6,101.7,86.9,12.0, 14.8, 35.9, 54.0,18.5, 37.6, 50.1],
+  roi2025:        [82.3,55.2,75.5, 51.2,30.7, 5.6, 15.3, 28.9, 36.3,33.1, 27.0, 75.6],
+  revenue2024:    [357444.35,327591.76,359683.93,330750.76,343809.70,317395.32,437288.66,370764.69,344690.64,413693.22,507091.31,519109.83],
+  revenue2025:    [538510.35,447278.89,546602.17,414959.49,420991.00,449896.62,613472.55,630694.15,749554.97,891465.44,837420.63,710245.27],
+};
+
+const salesGrowth = months.map((_,i) => +((d.sales2025[i]-d.sales2024[i])/d.sales2024[i]*100).toFixed(1));
+const revGrowth   = months.map((_,i) => +((d.revenue2025[i]-d.revenue2024[i])/d.revenue2024[i]*100).toFixed(1));
+const profitGrowth = months.map((_,i) => {
+  const base = Math.abs(d.profit2024[i]);
+  return base < 1 ? 0 : +((d.profit2025[i]-d.profit2024[i])/base*100).toFixed(1);
+});
+
+const baseOpts = (yUnit='') => ({
+  responsive:true, maintainAspectRatio:true,
+  interaction:{ mode:'index', intersect:false },
+  plugins:{
+    legend:{ labels:{ color:'#546e8a', font:{family:'Noto Sans SC',size:11}, boxWidth:12 } },
+    tooltip:{ backgroundColor:'#162236', titleColor:'#4fc3f7', bodyColor:'#dce8f8', borderColor:'rgba(255,255,255,0.08)', borderWidth:1 }
+  },
+  scales:{
+    x:{ ticks:{ color:'#546e8a', font:{size:10} }, grid:{ color:'rgba(255,255,255,0.04)' } },
+    y:{ ticks:{ color:'#546e8a', font:{size:10}, callback: v => yUnit==='¥' ? '¥'+Math.round(v/1000)+'k' : v+yUnit }, grid:{ color:'rgba(255,255,255,0.05)' } }
+  }
+});
+
+function lineDs(label, data, color, fill=false) {
+  return { label, data, borderColor:color, backgroundColor: fill ? color.replace('1)','0.08)') : 'transparent',
+    pointBackgroundColor:color, pointRadius:3, pointHoverRadius:5, tension:0.35, fill };
+}
+
+function barDs(label, data, color) {
+  return {
+    label, data,
+    backgroundColor: data.map(v => v < 0 ? 'rgba(255,107,107,0.6)' : color.replace('1)','0.6)')),
+    borderColor:     data.map(v => v < 0 ? 'rgba(255,107,107,1)' : color),
+    borderWidth:1, borderRadius:4
+  };
+}
+
+// Sales Line
+new Chart(document.getElementById('salesLine'), {
+  type:'line',
+  data:{ labels:months, datasets:[
+    lineDs('2024销量', d.sales2024, 'rgba(255,202,40,1)', true),
+    lineDs('2025销量', d.sales2025, 'rgba(79,195,247,1)', true),
+  ]},
+  options: baseOpts()
+});
+
+// Sales Bar
+new Chart(document.getElementById('salesBar'), {
+  type:'bar',
+  data:{ labels:months, datasets:[
+    barDs('2024销量', d.sales2024, 'rgba(255,202,40,1)'),
+    barDs('2025销量', d.sales2025, 'rgba(79,195,247,1)'),
+  ]},
+  options: baseOpts()
+});
+
+// Sales Growth
+new Chart(document.getElementById('salesGrowthBar'), {
+  type:'bar',
+  data:{ labels:months, datasets:[ barDs('销量增长率%', salesGrowth, 'rgba(105,240,174,1)') ]},
+  options: baseOpts('%')
+});
+
+// Revenue Line
+new Chart(document.getElementById('revLine'), {
+  type:'line',
+  data:{ labels:months, datasets:[
+    lineDs('2024销售额', d.revenue2024, 'rgba(255,202,40,1)', true),
+    lineDs('2025销售额', d.revenue2025, 'rgba(79,195,247,1)', true),
+  ]},
+  options: baseOpts('¥')
+});
+
+// Revenue Growth
+new Chart(document.getElementById('revGrowthBar'), {
+  type:'bar',
+  data:{ labels:months, datasets:[ barDs('销售额增长率%', revGrowth, 'rgba(79,195,247,1)') ]},
+  options: baseOpts('%')
+});
+
+// Profit Bar
+new Chart(document.getElementById('profitBar'), {
+  type:'bar',
+  data:{ labels:months, datasets:[
+    barDs('2024利润', d.profit2024, 'rgba(255,202,40,1)'),
+    barDs('2025利润', d.profit2025, 'rgba(105,240,174,1)'),
+  ]},
+  options: baseOpts('¥')
+});
+
+// Profit Rate Line
+new Chart(document.getElementById('profitRateLine'), {
+  type:'line',
+  data:{ labels:months, datasets:[
+    lineDs('2024利润率%', d.profitRate2024, 'rgba(255,202,40,1)'),
+    lineDs('2025利润率%', d.profitRate2025, 'rgba(105,240,174,1)'),
+  ]},
+  options: baseOpts('%')
+});
+
+// Profit Growth Bar
+new Chart(document.getElementById('profitGrowthBar'), {
+  type:'bar',
+  data:{ labels:months, datasets:[ barDs('利润增长率%', profitGrowth, 'rgba(206,147,216,1)') ]},
+  options: baseOpts('%')
+});
+
+// ROI Line
+new Chart(document.getElementById('roiLine'), {
+  type:'line',
+  data:{ labels:months, datasets:[
+    lineDs('2024 ROI%', d.roi2024, 'rgba(255,202,40,1)'),
+    lineDs('2025 ROI%', d.roi2025, 'rgba(79,195,247,1)'),
+  ]},
+  options: baseOpts('%')
+});
+
+// Return Rate Line
+new Chart(document.getElementById('returnRateLine'), {
+  type:'line',
+  data:{ labels:months, datasets:[
+    lineDs('2024退货率%', d.returnRate2024, 'rgba(255,171,64,1)'),
+    lineDs('2025退货率%', d.returnRate2025, 'rgba(255,107,107,1)'),
+  ]},
+  options: baseOpts('%')
+});
+
+// Table
+const tbl = document.getElementById('dataTable');
+tbl.innerHTML = `<thead><tr>
+  <th>月份</th><th>2024销量</th><th>2025销量</th><th>增长率</th>
+  <th>2024销售额</th><th>2025销售额</th>
+  <th>2024利润</th><th>2025利润</th>
+  <th>2024 ROI</th><th>2025 ROI</th>
+  <th>退货率变化</th>
+</tr></thead><tbody>${months.map((_,i)=>{
+  const sg = salesGrowth[i];
+  const rr = (d.returnRate2025[i]-d.returnRate2024[i]).toFixed(1);
+  const fmt = v => v>=0?`<span class="up">+${v}%</span>`:`<span class="dn">${v}%</span>`;
+  const fmtP = v => v>=0?`<span class="up">¥${v.toLocaleString()}</span>`:`<span class="dn">¥${v.toLocaleString()}</span>`;
+  return `<tr>
+    <td>${months[i]}</td>
+    <td>${d.sales2024[i]}</td><td>${d.sales2025[i]}</td><td>${fmt(sg)}</td>
+    <td>¥${Math.round(d.revenue2024[i]).toLocaleString()}</td><td>¥${Math.round(d.revenue2025[i]).toLocaleString()}</td>
+    <td>${fmtP(Math.round(d.profit2024[i]))}</td><td>${fmtP(Math.round(d.profit2025[i]))}</td>
+    <td>${d.roi2024[i]}%</td><td>${d.roi2025[i]}%</td>
+    <td>${parseFloat(rr)<=0?`<span class="up">${rr}%</span>`:`<span class="dn">+${rr}%</span>`}</td>
+  </tr>`;
+}).join('')}</tbody>`;
+
+function showTab(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active', ['sales','revenue','profit','roi','table'][i]===name);
+  });
+}
+</script>
+</body>
+</html>
