@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>店铺数据对比图表</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2535;
+    --accent: #00e5ff;
+    --gold: #ffd54f;
+    --green: #00e676;
+    --red: #ff5252;
+    --text: #e8f0fe;
+    --muted: #6b7a99;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px;
+    background-image: 
+      radial-gradient(ellipse at 20% 10%, rgba(0,229,255,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(100,100,255,0.06) 0%, transparent 50%);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+
+  .tab {
+    padding: 8px 20px;
+    border-radius: 50px;
+    border: 1px solid var(--muted);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .tab.active, .tab:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.08);
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .chart-card.wide {
+    grid-column: 1 / -1;
+  }
+
+  .chart-card h2 {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .chart-card h2 span {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  canvas { max-height: 300px; }
+
+  .growth-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .growth-item {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+    border: 1px solid transparent;
+    transition: transform 0.2s;
+  }
+
+  .growth-item:hover { transform: translateY(-2px); }
+
+  .growth-item.pos { border-color: rgba(0,230,118,0.25); }
+  .growth-item.neg { border-color: rgba(255,82,82,0.25); }
+
+  .growth-item .store-name {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .growth-item .growth-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+  }
+
+  .growth-item.pos .growth-val { color: var(--green); }
+  .growth-item.neg .growth-val { color: var(--red); }
+
+  .growth-item .sub {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  @media (max-width: 700px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .chart-card.wide { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>店铺数据对比分析</h1>
+  <p>2024 vs 2025 · 多维度绩效对比</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showView('overview')">总览</button>
+  <button class="tab" onclick="showView('profit')">利润分析</button>
+  <button class="tab" onclick="showView('roi')">ROI & 退货率</button>
+  <button class="tab" onclick="showView('growth')">增长率</button>
+</div>
+
+<div id="view-overview" class="charts-grid">
+  <div class="chart-card wide">
+    <h2>销量对比 <span>2024 vs 2025</span></h2>
+    <canvas id="salesChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>销售额对比 <span>2024 vs 2025</span></h2>
+    <canvas id="revenueChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>退货量对比 <span>2024 vs 2025</span></h2>
+    <canvas id="returnChart"></canvas>
+  </div>
+</div>
+
+<div id="view-profit" class="charts-grid" style="display:none">
+  <div class="chart-card wide">
+    <h2>利润对比 <span>2024 vs 2025（¥）</span></h2>
+    <canvas id="profitChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>利润率对比 <span>2024 vs 2025</span></h2>
+    <canvas id="profitRateChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>利润增长率 <span>各店铺</span></h2>
+    <canvas id="profitGrowthChart"></canvas>
+  </div>
+</div>
+
+<div id="view-roi" class="charts-grid" style="display:none">
+  <div class="chart-card wide">
+    <h2>ROI 对比 <span>2024 vs 2025</span></h2>
+    <canvas id="roiChart"></canvas>
+  </div>
+  <div class="chart-card wide">
+    <h2>退货率对比 <span>2024 vs 2025</span></h2>
+    <canvas id="returnRateChart"></canvas>
+  </div>
+</div>
+
+<div id="view-growth" class="charts-grid" style="display:none">
+  <div class="chart-card wide">
+    <h2>销量增长率 <span>各店铺</span></h2>
+    <div class="growth-grid" id="growthGrid"></div>
+  </div>
+  <div class="chart-card wide">
+    <h2>综合增长率雷达图 <span>各维度</span></h2>
+    <canvas id="radarChart"></canvas>
+  </div>
+</div>
+
+<script>
+const stores = ['qizhong-US','LaLuLa-US','jinkai-US','LaLuLa-CA','jinkai-CA','senda-US','qizhong-CA','senda-CA'];
+const data = {
+  sales2024:   [4396, 3351, 1376, 1512, 342,  300,  157,  154],
+  sales2025:   [7479, 4606, 3675, 2140, 1345, 574,  81,   48],
+  return2024:  [663,  439,  116,  144,  24,   63,   31,   30],
+  return2025:  [1186, 608,  246,  224,  62,   51,   3,    1],
+  returnRate2024: [15.1,13.1, 8.4,  9.5,  7.0,  21.0, 19.8, 19.5],
+  returnRate2025: [15.9,13.2, 6.7,  10.5, 4.6,  8.9,  3.7,  2.1],
+  profit2024:  [-51751.58, 151690.68, -12208.76, 15676.84, -8816.77, -35336.79, -14337.11, 10395.65],
+  profit2025:  [78857.59,  267463.37, 125880.20, 136892.69, 20900.97, -60002.13, -2411.32, -1240.58],
+  profitRate2024: [3.4,  17.7, 6.3,  10.9, 3.1,  -15.5, -13.8, -7.9],
+  profitRate2025: [6.3,  11.5, 6.8,  14.5, 3.3,  -29.8, -9.5, -4.6],
+  roi2024:   [19.0, 105.8, 26.7, 59.9, 13.2, -41.4, -60.1, -27.4],
+  roi2025:   [39.6, 60.7,  31.8, 93.3, 14.8, -59.6, -27.9, -15.4],
+  revenue2024: [1250307.28, 1593389.24, 733916.57, 607736.40, 161398.94, 151516.09, 65725.82, 63223.83],
+  revenue2025: [1243984.63, 2328191.23, 1841552.89, 944267.11, 639557.50, 201498.43, 25269.28, 26770.44],
+};
+
+const salesGrowth = stores.map((s,i)=>((data.sales2025[i]-data.sales2024[i])/data.sales2024[i]*100).toFixed(1));
+
+const C = {
+  accent: 'rgba(0,229,255,',
+  gold: 'rgba(255,213,79,',
+  green: 'rgba(0,230,118,',
+  red: 'rgba(255,82,82,',
+  purple: 'rgba(179,136,255,',
+  orange: 'rgba(255,171,64,',
+};
+
+const defaultOptions = (unit='') => ({
+  responsive: true,
+  plugins: {
+    legend: { labels: { color: '#6b7a99', font: { family: 'Noto Sans SC', size: 11 } } },
+    tooltip: {
+      backgroundColor: '#1a2535',
+      titleColor: '#00e5ff',
+      bodyColor: '#e8f0fe',
+      borderColor: 'rgba(255,255,255,0.1)',
+      borderWidth: 1,
+      callbacks: unit ? { label: ctx => `${ctx.dataset.label}: ${ctx.raw}${unit}` } : {}
+    }
+  },
+  scales: {
+    x: { ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+    y: { ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.06)' } }
+  }
+});
+
+function barDs(label, data, color, alpha=0.7) {
+  return {
+    label, data,
+    backgroundColor: data.map(v => v < 0 ? `rgba(255,82,82,${alpha})` : `${color}${alpha})`),
+    borderColor: data.map(v => v < 0 ? 'rgba(255,82,82,1)' : `${color}1)`),
+    borderWidth: 1, borderRadius: 4
+  };
+}
+
+// Sales
+new Chart(document.getElementById('salesChart'), {
+  type: 'bar',
+  data: {
+    labels: stores,
+    datasets: [
+      { label: '2024销量', data: data.sales2024, backgroundColor: `${C.gold}0.6)`, borderColor: `${C.gold}1)`, borderWidth:1, borderRadius:4 },
+      { label: '2025销量', data: data.sales2025, backgroundColor: `${C.accent}0.6)`, borderColor: `${C.accent}1)`, borderWidth:1, borderRadius:4 },
+    ]
+  },
+  options: { ...defaultOptions(), plugins: { ...defaultOptions().plugins } }
+});
+
+// Revenue
+new Chart(document.getElementById('revenueChart'), {
+  type: 'bar',
+  data: {
+    labels: stores,
+    datasets: [
+      { label: '2024销售额', data: data.revenue2024, backgroundColor: `${C.gold}0.55)`, borderColor: `${C.gold}1)`, borderWidth:1, borderRadius:4 },
+      { label: '2025销售额', data: data.revenue2025, backgroundColor: `${C.accent}0.55)`, borderColor: `${C.accent}1)`, borderWidth:1, borderRadius:4 },
+    ]
+  },
+  options: defaultOptions('¥')
+});
+
+// Return count
+new Chart(document.getElementById('returnChart'), {
+  type: 'bar',
+  data: {
+    labels: stores,
+    datasets: [
+      { label: '2024退款量', data: data.return2024, backgroundColor: `${C.orange}0.55)`, borderColor: `${C.orange}1)`, borderWidth:1, borderRadius:4 },
+      { label: '2025退款量', data: data.return2025, backgroundColor: `${C.red}0.55)`, borderColor: `${C.red}1)`, borderWidth:1, borderRadius:4 },
+    ]
+  },
+  options: defaultOptions()
+});
+
+// Profit
+new Chart(document.getElementById('profitChart'), {
+  type: 'bar',
+  data: {
+    labels: stores,
+    datasets: [
+      barDs('2024利润', data.profit2024, C.gold),
+      barDs('2025利润', data.profit2025, C.green),
+    ]
+  },
+  options: defaultOptions('¥')
+});
+
+// Profit rate
+new Chart(document.getElementById('profitRateChart'), {
+  type: 'bar',
+  data: {
+    labels: stores,
+    datasets: [
+      barDs('2024利润率', data.profitRate2024, C.gold, 0.65),
+      barDs('2025利润率', data.profitRate2025, C.green, 0.65),
+    ]
+  },
+  options: defaultOptions('%')
+});
+
+// Profit growth bar
+const profitGrowth = stores.map((s,i) => {
+  if(data.profit2024[i] === 0) return 0;
+  return parseFloat(((data.profit2025[i]-data.profit2024[i])/Math.abs(data.profit2024[i])*100).toFixed(1));
+});
+new Chart(document.getElementById('profitGrowthChart'), {
+  type: 'bar',
+  data: {
+    labels: stores,
+    datasets: [barDs('利润增长率%', profitGrowth, C.accent, 0.7)]
+  },
+  options: defaultOptions('%')
+});
+
+// ROI
+new Chart(document.getElementById('roiChart'), {
+  type: 'bar',
+  data: {
+    labels: stores,
+    datasets: [
+      barDs('2024 ROI', data.roi2024, C.purple, 0.65),
+      barDs('2025 ROI', data.roi2025, C.accent, 0.65),
+    ]
+  },
+  options: defaultOptions('%')
+});
+
+// Return rate
+new Chart(document.getElementById('returnRateChart'), {
+  type: 'line',
+  data: {
+    labels: stores,
+    datasets: [
+      { label: '2024退货率%', data: data.returnRate2024, borderColor: `${C.orange}1)`, backgroundColor: `${C.orange}0.1)`, pointBackgroundColor: `${C.orange}1)`, tension: 0.3, fill: true, pointRadius: 5 },
+      { label: '2025退货率%', data: data.returnRate2025, borderColor: `${C.red}1)`, backgroundColor: `${C.red}0.1)`, pointBackgroundColor: `${C.red}1)`, tension: 0.3, fill: true, pointRadius: 5 },
+    ]
+  },
+  options: defaultOptions('%')
+});
+
+// Growth grid
+const gGrid = document.getElementById('growthGrid');
+stores.forEach((s,i) => {
+  const val = parseFloat(salesGrowth[i]);
+  const el = document.createElement('div');
+  el.className = `growth-item ${val >= 0 ? 'pos' : 'neg'}`;
+  const d2024 = data.sales2024[i], d2025 = data.sales2025[i];
+  el.innerHTML = `<div class="store-name">${s}</div><div class="growth-val">${val > 0 ? '+' : ''}${val}%</div><div class="sub">${d2024} → ${d2025}</div>`;
+  gGrid.appendChild(el);
+});
+
+// Radar
+const radarLabels = ['销量增长','销售额增长','利润增长','ROI变化','退货率改善'];
+const total2024 = [11588, 4629314.17, 34520.86, 44.8, 13.0];
+const total2025 = [19948, 7251091.52, 566340.79, 39.3, 11.9];
+function normalize(v24, v25, invert=false) {
+  const chg = (v25-v24)/Math.abs(v24)*100;
+  if(invert) return Math.max(0, Math.min(100, 50 - chg));
+  return Math.max(0, Math.min(100, 50 + chg/3));
+}
+const radarData = [
+  normalize(total2024[0], total2025[0]),
+  normalize(total2024[1], total2025[1]),
+  normalize(total2024[2], total2025[2]),
+  normalize(total2024[3], total2025[3]),
+  normalize(total2024[4], total2025[4], true),
+];
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: radarLabels,
+    datasets: [{
+      label: '总计综合表现',
+      data: radarData,
+      backgroundColor: 'rgba(0,229,255,0.15)',
+      borderColor: 'rgba(0,229,255,0.8)',
+      pointBackgroundColor: 'rgba(0,229,255,1)',
+      pointRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      r: {
+        min: 0, max: 100,
+        ticks: { display: false },
+        grid: { color: 'rgba(255,255,255,0.08)' },
+        angleLines: { color: 'rgba(255,255,255,0.08)' },
+        pointLabels: { color: '#6b7a99', font: { family: 'Noto Sans SC', size: 12 } }
+      }
+    },
+    plugins: { legend: { labels: { color: '#6b7a99' } } }
+  }
+});
+
+function showView(name) {
+  ['overview','profit','roi','growth'].forEach(v => {
+    document.getElementById('view-'+v).style.display = v===name ? 'grid' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['overview','profit','roi','growth'][i] === name);
+  });
+}
+</script>
+</body>
+</html>
