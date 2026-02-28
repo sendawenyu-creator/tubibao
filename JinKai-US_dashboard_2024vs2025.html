@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JinKai-US 品名对比 2024 vs 2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0c0f14; --surface:#131820; --border:#1e2533;
+    --c24:#f0a500; --c25:#38bdf8;
+    --cpos:#34d399; --cneg:#f87171;
+    --text:#dde6f0; --muted:#4a5a6e; --accent:#fb923c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;padding:32px 24px 60px;}
+  .header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:16px;}
+  .header h1{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;line-height:1.15;}
+  .header h1 em{color:var(--accent);font-style:normal;}
+  .header p{color:var(--muted);font-size:.75rem;letter-spacing:2px;text-transform:uppercase;margin-top:5px;}
+  .legend{display:flex;gap:16px;align-items:center;}
+  .legend-item{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted);}
+  .dot{width:10px;height:10px;border-radius:50%;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:24px;}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+  .kpi .lbl{font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+  .kpi .val{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:500;margin:5px 0 3px;}
+  .chg{font-size:.75rem;font-weight:700;}
+  .chg.pos{color:var(--cpos);} .chg.neg{color:var(--cneg);}
+  .banner{border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:.78rem;line-height:1.65;}
+  .banner.warn{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.28);color:#f87171;}
+  .banner.warn strong{color:#fca5a5;}
+  .banner.good{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25);color:#6ee7b7;}
+  .banner.good strong{color:#a7f3d0;}
+  .tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+  .tab{padding:7px 16px;border-radius:40px;border:1px solid var(--border);background:transparent;
+    color:var(--muted);font-family:'Syne',sans-serif;font-size:.76rem;cursor:pointer;transition:all .2s;}
+  .tab.active,.tab:hover{border-color:var(--accent);color:var(--text);background:rgba(251,146,60,.1);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px;margin-bottom:18px;display:none;}
+  .card.active{display:block;}
+  .card-title{font-size:.65rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:18px;}
+  .card-title strong{color:var(--text);font-size:.92rem;letter-spacing:0;display:block;margin-bottom:2px;font-weight:700;}
+  canvas{max-height:400px;}
+  .note{font-size:.68rem;color:var(--muted);margin-top:12px;text-align:right;}
+  .sum-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:.73rem;}
+  thead th{background:#0d1117;color:var(--muted);padding:8px 10px;text-align:right;
+    font-weight:400;font-size:.63rem;letter-spacing:1px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  thead th:first-child{text-align:left;}
+  tbody td{padding:7px 10px;text-align:right;border-bottom:1px solid #0d1117;
+    font-family:'DM Mono',monospace;white-space:nowrap;}
+  tbody td:first-child{text-align:left;font-family:'Syne',sans-serif;color:var(--accent);font-size:.68rem;}
+  tbody tr:hover td{background:rgba(255,255,255,.02);}
+  .tpos{color:var(--cpos);} .tneg{color:var(--cneg);} .tnew{color:#fbbf24;font-weight:700;} .tstop{color:#f87171;font-weight:700;}
+  .growth-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px;}
+  .growth-card{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .growth-card .prod{font-size:.73rem;color:var(--accent);margin-bottom:7px;font-weight:700;}
+  .growth-card .metric{display:flex;justify-content:space-between;font-size:.69rem;margin:4px 0;}
+  .growth-card .metric span:first-child{color:var(--muted);}
+  .bar-track{height:4px;background:#1e2533;border-radius:2px;margin-top:10px;}
+  .bar-fill{height:100%;border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🇺🇸 JinKai-US<br><em>品名</em> 数据对比</h1>
+    <p>2024 vs 2025 · 按2025销售额排序</p>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="dot" style="background:var(--c24)"></div>2024</div>
+    <div class="legend-item"><div class="dot" style="background:var(--c25)"></div>2025</div>
+  </div>
+</div>
+
+<div class="banner good">
+  🚀 <strong>强劲增长：</strong>销售额从 $73.4万 跃升至 $184.2万（+150.9%），成功扭亏为盈，利润 $12.7万（利润率 6.9%）。YW011-22-33 全新上线即贡献 $42.6万销售额，JYW001-4 销售额翻倍达 $42.3万。
+</div>
+<div class="banner warn">
+  ⚠️ <strong>需关注：</strong>WY0403 连续两年深度亏损（-$32K→-$11K），JYW001-4-DM / JYW005-8 规模扩大却转为亏损，20209 退货率从 14.3% 升至 19.9%，JYT01 新品亏损率高达 -44.5%。
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('sales',this)">📦 销量</button>
+  <button class="tab" onclick="show('revenue',this)">💰 销售额</button>
+  <button class="tab" onclick="show('profit',this)">📈 利润</button>
+  <button class="tab" onclick="show('ad',this)">📣 广告花费</button>
+  <button class="tab" onclick="show('rr',this)">📉 退货率</button>
+  <button class="tab" onclick="show('overview',this)">🔍 综合气泡</button>
+  <button class="tab" onclick="show('growth',this)">🚀 增长率卡片</button>
+  <button class="tab" onclick="show('table',this)">📋 数据表</button>
+</div>
+
+<div class="card active" id="card-sales"><div class="card-title"><strong>销量对比</strong>各品名 · 2024 vs 2025</div><canvas id="salesChart"></canvas></div>
+<div class="card" id="card-revenue"><div class="card-title"><strong>销售额对比</strong>各品名 · 2024 vs 2025 (USD)</div><canvas id="revChart"></canvas></div>
+<div class="card" id="card-profit"><div class="card-title"><strong>利润对比</strong>各品名 · 2024 vs 2025 (USD)</div><canvas id="profitChart"></canvas></div>
+<div class="card" id="card-ad"><div class="card-title"><strong>广告花费对比</strong>各品名 · 2024 vs 2025 (USD)</div><canvas id="adChart"></canvas></div>
+<div class="card" id="card-rr"><div class="card-title"><strong>退货率对比</strong>各品名 · 2024 vs 2025 (%)</div><canvas id="rrChart"></canvas></div>
+<div class="card" id="card-overview">
+  <div class="card-title"><strong>综合气泡图</strong>X轴=销售额 · Y轴=利润 · 气泡大小=销量 · 2025数据</div>
+  <canvas id="bubbleChart"></canvas><p class="note">气泡大小 = 2025销量</p>
+</div>
+<div class="card" id="card-growth"><div class="card-title"><strong>增长率卡片</strong>各品名核心指标同比变化</div><div class="growth-grid" id="growthGrid"></div></div>
+<div class="card" id="card-table"><div class="card-title"><strong>完整数据汇总</strong>按品名 · 含变化%</div><div class="sum-wrap"><table id="sumTable"></table></div></div>
+
+<script>
+const rawData = [
+  {p:"YW011-22-33", skus:11,s24:0,   s25:830, ret24:0,  ret25:64, rr24:0,    rr25:7.2,  rev24:0,      rev25:425957, p24:0,      p25:59068,  ad24:0,     ad25:84706},
+  {p:"JYW001-4",   skus:6, s24:420,  s25:905, ret24:15, ret25:46, rr24:3.4,  rr25:4.8,  rev24:195485, rev25:422900, p24:16273,  p25:50585,  ad24:35198, ad25:83182},
+  {p:"C24044-6",   skus:4, s24:203,  s25:459, ret24:8,  ret25:34, rr24:3.8,  rr25:6.9,  rev24:108088, rev25:244340, p24:7499,   p25:26935,  ad24:25028, ad25:51522},
+  {p:"C24041-3",   skus:4, s24:90,   s25:308, ret24:2,  ret25:22, rr24:2.2,  rr25:6.7,  rev24:49847,  rev25:166641, p24:-9667,  p25:17480,  ad24:25565, ad25:36237},
+  {p:"JYW005-8",   skus:6, s24:84,   s25:403, ret24:3,  ret25:16, rr24:3.4,  rr25:3.8,  rev24:44918,  rev25:189706, p24:2045,   p25:-7841,  ad24:10955, ad25:54612},
+  {p:"JYW001-4-DM",skus:4, s24:48,   s25:297, ret24:3,  ret25:9,  rr24:5.9,  rr25:2.9,  rev24:24716,  rev25:138148, p24:3716,   p25:-4683,  ad24:1720,  ad25:27208},
+  {p:"JYW005-8-DM",skus:4, s24:0,    s25:193, ret24:0,  ret25:6,  rr24:0,    rr25:3.0,  rev24:0,      rev25:94865,  p24:0,      p25:7488,   ad24:0,     ad25:14670},
+  {p:"20209",      skus:2, s24:270,  s25:161, ret24:45, ret25:40, rr24:14.3, rr25:19.9, rev24:164506, rev25:95841,  p24:9832,   p25:3848,   ad24:28738, ad25:15806},
+  {p:"JYT01",      skus:2, s24:0,    s25:68,  ret24:0,  ret55:1,  rr24:0,    rr25:1.4,  rev24:0,      rev25:34920,  p24:0,      p25:-15545, ad24:0,     ad25:19404},
+  {p:"19014",      skus:2, s24:161,  s25:16,  ret24:30, ret25:3,  rr24:15.7, rr25:15.8, rev24:97920,  rev25:9957,   p24:-9042,  p25:870,    ad24:18903, ad25:1428},
+  {p:"WY0403",     skus:4, s24:100,  s25:35,  ret24:10, ret25:5,  rr24:9.1,  rr25:12.5, rev24:48437,  rev25:18277,  p24:-31984, p25:-11432, ad24:28739, ad25:6566},
+];
+rawData.forEach(d=>{if(d.ret55!==undefined){d.ret25=d.ret55;delete d.ret55;}});
+
+const meaningful = rawData.filter(d=>d.s24+d.s25>0).sort((a,b)=>b.rev25-a.rev25);
+const chartData = meaningful;
+const labels = chartData.map(d=>d.p);
+
+const sum = k => rawData.reduce((a,d)=>a+(d[k]||0),0);
+const t24s=sum('s24'),t25s=sum('s25'),t24ret=sum('ret24'),t25ret=sum('ret25');
+const t24r=sum('rev24'),t25r=sum('rev25'),t24p=sum('p24'),t25p=sum('p25');
+const t24ad=sum('ad24'),t25ad=sum('ad25');
+
+function chgStr(a,b){
+  if(a===0&&b===0) return '';
+  if(a===0) return '<span class="chg pos">NEW</span>';
+  const p=((b-a)/Math.abs(a)*100).toFixed(1);
+  return `<span class="chg ${p>=0?'pos':'neg'}">${p>=0?'+':''}${p}%</span>`;
+}
+function fmtK(v){
+  const s=v<0?'-':''; const av=Math.abs(v);
+  if(av>=1000000) return s+'$'+(av/1000000).toFixed(2)+'M';
+  if(av>=1000) return s+'$'+(av/1000).toFixed(1)+'K';
+  return s+'$'+Math.round(av);
+}
+
+document.getElementById('kpis').innerHTML=`
+  <div class="kpi"><div class="lbl">总销量 2024</div><div class="val">${t24s.toLocaleString()}</div></div>
+  <div class="kpi"><div class="lbl">总销量 2025</div><div class="val">${t25s.toLocaleString()}</div>${chgStr(t24s,t25s)}</div>
+  <div class="kpi"><div class="lbl">总退款量 2024</div><div class="val">${t24ret}</div></div>
+  <div class="kpi"><div class="lbl">总退款量 2025</div><div class="val">${t25ret}</div>${chgStr(t24ret,t25ret)}</div>
+  <div class="kpi"><div class="lbl">总销售额 2024</div><div class="val">${fmtK(t24r)}</div></div>
+  <div class="kpi"><div class="lbl">总销售额 2025</div><div class="val">${fmtK(t25r)}</div>${chgStr(t24r,t25r)}</div>
+  <div class="kpi"><div class="lbl">总利润 2024</div><div class="val" style="color:var(--cneg)">${fmtK(t24p)}</div></div>
+  <div class="kpi"><div class="lbl">总利润 2025</div><div class="val" style="color:var(--cpos)">${fmtK(t25p)}</div>${chgStr(t24p,t25p)}</div>
+  <div class="kpi"><div class="lbl">总广告 2024</div><div class="val">${fmtK(t24ad)}</div></div>
+  <div class="kpi"><div class="lbl">总广告 2025</div><div class="val">${fmtK(t25ad)}</div>${chgStr(t24ad,t25ad)}</div>
+`;
+
+Chart.defaults.color='#4a5a6e';
+Chart.defaults.font.family="'DM Mono',monospace";
+Chart.defaults.font.size=10;
+const C24='#f0a500',C25='#38bdf8',CPOS='#34d399',CNEG='#f87171';
+
+const baseOpts=(fmt='')=>({
+  responsive:true,maintainAspectRatio:true,
+  plugins:{
+    legend:{labels:{color:'#7a8a9e',font:{size:11},boxWidth:12,padding:14}},
+    tooltip:{backgroundColor:'#131820',borderColor:'#2a3545',borderWidth:1,
+      titleColor:'#8a9ab0',bodyColor:'#dde6f0',padding:10,
+      callbacks:fmt?{label:ctx=>`${ctx.dataset.label}: ${fmt==='$'?'$'+Math.round(ctx.raw).toLocaleString():ctx.raw+(fmt==='%'?'%':'')}`}:{}}
+  },
+  scales:{
+    x:{ticks:{color:'#4a5a6e',maxRotation:40,font:{size:8}},grid:{color:'rgba(255,255,255,0.04)'}},
+    y:{ticks:{color:'#4a5a6e',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}}
+  }
+});
+
+function barChart(id,d24,d25,l24,l25,fmt=''){
+  new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[
+    {label:l24,data:d24,backgroundColor:C24+'55',borderColor:C24,borderWidth:1.5,borderRadius:4},
+    {label:l25,data:d25,backgroundColor:C25+'55',borderColor:C25,borderWidth:1.5,borderRadius:4},
+  ]},options:baseOpts(fmt)});
+}
+
+new Chart(document.getElementById('profitChart'),{type:'bar',data:{labels,datasets:[
+  {label:'2024利润',data:chartData.map(d=>d.p24),backgroundColor:chartData.map(d=>d.p24>=0?C24+'55':CNEG+'55'),borderColor:chartData.map(d=>d.p24>=0?C24:CNEG),borderWidth:1.5,borderRadius:4},
+  {label:'2025利润',data:chartData.map(d=>d.p25),backgroundColor:chartData.map(d=>d.p25>=0?CPOS+'55':CNEG+'55'),borderColor:chartData.map(d=>d.p25>=0?CPOS:CNEG),borderWidth:1.5,borderRadius:4},
+]},options:{...baseOpts('$'),scales:{...baseOpts().scales,y:{...baseOpts().scales.y,ticks:{...baseOpts().scales.y.ticks,callback:v=>v>=0?'$'+(v/1000).toFixed(0)+'K':'-$'+(Math.abs(v)/1000).toFixed(0)+'K'}}}}});
+
+barChart('salesChart',chartData.map(d=>d.s24),chartData.map(d=>d.s25),'2024销量','2025销量');
+barChart('revChart',chartData.map(d=>d.rev24),chartData.map(d=>d.rev25),'2024销售额','2025销售额','$');
+barChart('adChart',chartData.map(d=>d.ad24),chartData.map(d=>d.ad25),'2024广告','2025广告','$');
+barChart('rrChart',chartData.map(d=>d.rr24),chartData.map(d=>d.rr25),'2024退货率%','2025退货率%','%');
+
+const PAL=['#fb923c','#38bdf8','#34d399','#f87171','#a78bfa','#f0a500','#2dd4bf','#f472b6','#86efac','#fbbf24','#c084fc'];
+new Chart(document.getElementById('bubbleChart'),{type:'bubble',
+  data:{datasets:chartData.filter(d=>d.s25>0).map((d,i)=>({
+    label:d.p,data:[{x:d.rev25/1000,y:d.p25/1000,r:Math.max(5,Math.sqrt(d.s25)*2)}],
+    backgroundColor:PAL[i%PAL.length]+'99',borderColor:PAL[i%PAL.length],borderWidth:1.5,
+  }))},
+  options:{responsive:true,plugins:{
+    legend:{labels:{color:'#7a8a9e',font:{size:9},boxWidth:9,padding:8}},
+    tooltip:{backgroundColor:'#131820',borderColor:'#2a3545',borderWidth:1,
+      callbacks:{label:ctx=>{const d=chartData.filter(x=>x.s25>0)[ctx.datasetIndex];
+        return[d.p,`销售额: $${(d.rev25/1000).toFixed(1)}K`,`利润: $${(d.p25/1000).toFixed(1)}K`,`销量: ${d.s25}`];}}}
+  },
+  scales:{
+    x:{title:{display:true,text:'2025销售额 ($K)',color:'#7a8a9e'},ticks:{color:'#4a5a6e',callback:v=>v+'K'},grid:{color:'rgba(255,255,255,0.04)'}},
+    y:{title:{display:true,text:'2025利润 ($K)',color:'#7a8a9e'},ticks:{color:'#4a5a6e',callback:v=>v+'K'},grid:{color:'rgba(255,255,255,0.04)'}}
+  }}
+});
+
+document.getElementById('growthGrid').innerHTML = meaningful.map(d=>{
+  const isNew=d.s24===0&&d.rev24===0, isStop=d.s25===0&&d.rev25===0;
+  const revGrow=d.rev24>0?((d.rev25-d.rev24)/Math.abs(d.rev24)*100):null;
+  const salesGrow=d.s24>0?((d.s25-d.s24)/Math.abs(d.s24)*100):null;
+  const profitDiff=d.p25-d.p24;
+  const badge=isNew?'<span style="color:#fbbf24;font-size:.63rem">🆕 新品</span>':isStop?'<span style="color:#f87171;font-size:.63rem">⛔ 停售</span>':'';
+  const revStr=revGrow===null?(isNew?'新品':'—'):(revGrow>=0?'+':'')+revGrow.toFixed(1)+'%';
+  const salesStr=salesGrow===null?(isNew?'新品':'—'):(salesGrow>=0?'+':'')+salesGrow.toFixed(1)+'%';
+  const profStr=(profitDiff>=0?'+':'')+Math.round(profitDiff).toLocaleString();
+  const revColor=revGrow===null?'#fbbf24':revGrow>=0?'#34d399':'#f87171';
+  const salesColor=salesGrow===null?'#fbbf24':salesGrow>=0?'#34d399':'#f87171';
+  const profColor=profitDiff>=0?'#34d399':'#f87171';
+  const barPct=Math.min(100,Math.abs(revGrow||100));
+  const barCol=revGrow===null?'#fbbf24':revGrow>=0?'#34d399':'#f87171';
+  const pm25=d.rev25>0?(d.p25/d.rev25*100).toFixed(1)+'%':'—';
+  return `<div class="growth-card">
+    <div class="prod">${d.p} ${badge}</div>
+    <div class="metric"><span>销售额增长</span><span style="color:${revColor};font-weight:700">${revStr}</span></div>
+    <div class="metric"><span>销量增长</span><span style="color:${salesColor};font-weight:700">${salesStr}</span></div>
+    <div class="metric"><span>利润变化</span><span style="color:${profColor};font-weight:700">$${profStr}</span></div>
+    <div class="metric"><span>2025利润率</span><span style="color:${d.rev25>0&&(d.p25/d.rev25)<0?'#f87171':'#dde6f0'}">${pm25}</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${barPct}%;background:${barCol}"></div></div>
+  </div>`;
+}).join('');
+
+const pctChg=(a,b)=>a===0&&b===0?'—':a===0?'<span class="tnew">新品</span>':b===0?'<span class="tstop">停售</span>':`<span class="${(b-a)>=0?'tpos':'tneg'}">${((b-a)/Math.abs(a)*100)>=0?'+':''}${((b-a)/Math.abs(a)*100).toFixed(1)}%</span>`;
+const cls=v=>v>0?'tpos':v<0?'tneg':'';
+document.getElementById('sumTable').innerHTML=`
+<thead><tr>
+  <th>品名</th><th>SKU</th>
+  <th>销量24</th><th>销量25</th><th>变化</th>
+  <th>退款24</th><th>退款25</th>
+  <th>退货率24</th><th>退货率25</th>
+  <th>销售额24</th><th>销售额25</th><th>变化</th>
+  <th>利润24</th><th>利润25</th><th>利润变化额</th>
+  <th>广告24</th><th>广告25</th><th>广告变化</th>
+</tr></thead>
+<tbody>
+${meaningful.map(d=>`<tr>
+  <td>${d.p}</td><td>${d.skus}</td>
+  <td>${d.s24.toLocaleString()}</td><td>${d.s25.toLocaleString()}</td><td>${pctChg(d.s24,d.s25)}</td>
+  <td>${d.ret24}</td><td>${(d.ret25||0)}</td>
+  <td>${d.rr24}%</td><td>${d.rr25}%</td>
+  <td>$${d.rev24.toLocaleString()}</td><td>$${d.rev25.toLocaleString()}</td><td>${pctChg(d.rev24,d.rev25)}</td>
+  <td class="${cls(d.p24)}">$${d.p24.toLocaleString()}</td>
+  <td class="${cls(d.p25)}">$${d.p25.toLocaleString()}</td>
+  <td class="${cls(d.p25-d.p24)}">${d.p25-d.p24>=0?'+':''}${(d.p25-d.p24).toLocaleString()}</td>
+  <td>$${d.ad24.toLocaleString()}</td><td>$${d.ad25.toLocaleString()}</td><td>${pctChg(d.ad24,d.ad25)}</td>
+</tr>`).join('')}
+</tbody>`;
+
+function show(name,btn){
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('card-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
