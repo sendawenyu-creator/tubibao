@@ -1,0 +1,118 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.wrap{padding:1rem 0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.tab{padding:5px 14px;border-radius:20px;border:0.5px solid var(--color-border-secondary);font-size:12px;cursor:pointer;color:var(--color-text-secondary);background:transparent;display:flex;align-items:center;gap:5px}
+.tab.on{color:#fff;border-color:transparent}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.2rem}
+.scard{border-radius:var(--border-radius-md);padding:10px 12px;cursor:pointer;border:1.5px solid transparent;transition:border-color .15s}
+.scard.on{border-color:currentColor}
+.scard-label{font-size:11px;margin-bottom:4px}
+.scard-n{font-size:20px;font-weight:500}
+input[type=text]{width:100%;padding:6px 12px;font-size:13px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);margin-bottom:0.75rem}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);white-space:nowrap}
+tbody tr:hover{background:var(--color-background-secondary)}
+tbody tr{border-bottom:0.5px solid var(--color-border-tertiary)}
+tbody td{padding:5px 8px;vertical-align:middle}
+.sparkline{display:inline-flex;align-items:flex-end;gap:2px;height:24px;vertical-align:middle}
+.spark-bar{width:7px;border-radius:1px;min-height:2px}
+.meta{font-size:12px;color:var(--color-text-secondary);margin-bottom:8px}
+.trend-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:500}
+.num{font-family:var(--font-mono);font-size:11px}
+</style>
+<div class="wrap">
+
+<div class="summary" id="summary"></div>
+<input type="text" id="q" placeholder="搜索关键词..." oninput="render()">
+<div class="meta" id="meta"></div>
+<table>
+  <thead>
+    <tr>
+      <th style="width:22px">#</th>
+      <th>关键词</th>
+      <th>中文</th>
+      <th>趋势类型</th>
+      <th style="min-width:130px">趋势图 (2021→2025)</th>
+      <th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th>
+      <th>5年总量</th>
+    </tr>
+  </thead>
+  <tbody id="tb"></tbody>
+</table>
+</div>
+
+<script>
+const CATS={
+  '持续增长型':{color:'#1D9E75',bg:'#E1F5EE',text:'#085041',label:'持续增长型',desc:'逐年稳步上升'},
+  '平稳波动型':{color:'#378ADD',bg:'#E6F1FB',text:'#0C447C',label:'平稳波动型',desc:'维持稳定无明显趋势'},
+  '持续下降型':{color:'#D85A30',bg:'#FAECE7',text:'#993C1D',label:'持续下降型',desc:'逐年萎缩衰退'},
+  '爆发后回落型':{color:'#BA7517',bg:'#FAEEDA',text:'#854F0B',label:'爆发后回落型',desc:'早期爆发后回落'},
+  '新兴/数据不足':{color:'#7F77DD',bg:'#EEEDFE',text:'#3C3489',label:'新兴词',desc:'近期新出现/数据少'},
+};
+
+const RAW={"持续增长型":[{"keyword":"bedroom wall sconce","zh":"卧室壁灯","vals":[659594,528843,613846,856168,956377],"total":3614828},{"keyword":"farmhouse wall sconces","zh":"农舍壁灯","vals":[422337,758552,786533,756340,678340],"total":3402102},{"keyword":"sconces wall decor","zh":"壁灯装饰","vals":[434547,574449,687106,844189,849771],"total":3390062},{"keyword":"industrial wall sconce","zh":"工业壁灯","vals":[345556,430385,629506,761998,729880],"total":2897325},{"keyword":"magnetic wall sconces","zh":"磁性壁灯","vals":[0,579859,603491,638126,833794],"total":2655270},{"keyword":"wall sconce candle holder","zh":"壁灯烛台","vals":[345675,659579,645693,495659,498854],"total":2645460},{"keyword":"gold wall sconces set of 2","zh":"金色壁灯2件套","vals":[0,0,583555,852043,943395],"total":2378993},{"keyword":"wall sconces wireless","zh":"无线壁灯","vals":[0,0,642702,776493,853606],"total":2272801},{"keyword":"black wall sconces battery operated","zh":"黑色壁灯电池供电","vals":[0,0,656937,753355,839505],"total":2249797},{"keyword":"rechargeable sconces wall lights","zh":"可充电壁灯","vals":[0,416745,384889,577921,697327],"total":2076882},{"keyword":"wall light sconces battery operated","zh":"壁灯电池供电","vals":[0,0,368012,772669,825086],"total":1965767},{"keyword":"rustic wall sconces","zh":"质朴的壁灯","vals":[212397,306575,443980,503347,344552],"total":1810851},{"keyword":"candle wall sconces","zh":"蜡烛壁灯","vals":[179643,194097,276268,618730,532311],"total":1801049},{"keyword":"battery operated wall sconces set of two","zh":"电池供电壁灯套装两只","vals":[0,377352,290240,602866,521730],"total":1792188},{"keyword":"farmhouse wall sconce","zh":"农舍壁灯","vals":[225998,269311,390250,435182,466767],"total":1787508},{"keyword":"wall sconces rechargeable","zh":"壁灯可充电","vals":[0,0,467697,720627,526414],"total":1714738},{"keyword":"wall sconces battery operated set of 2","zh":"电池供电壁灯2件套","vals":[0,0,346313,694190,572954],"total":1613457},{"keyword":"peel and stick sconces wall lighting","zh":"即剥即贴壁灯","vals":[0,288972,455799,374223,479373],"total":1598367},{"keyword":"wall sconces set of two candle holder","zh":"壁灯两件套烛台","vals":[137115,207758,298345,332093,576348],"total":1551659},{"keyword":"kartoosh battery operated wall sconces","zh":"Kartoosh电池壁灯","vals":[0,0,0,675731,762204],"total":1437935},{"keyword":"koopala led wall sconces","zh":"Koopala LED壁灯","vals":[0,0,221292,441940,668334],"total":1331566},{"keyword":"modern wall sconce","zh":"现代壁灯","vals":[219365,183201,204350,206270,448484],"total":1261670},{"keyword":"koopla led wall sconce","zh":"Koopla LED壁灯","vals":[0,0,0,583938,667109],"total":1251047},{"keyword":"wall sconces set of two rechargeable","zh":"壁灯两件套可充电","vals":[0,0,0,549360,654042],"total":1203402},{"keyword":"poplight wall sconce","zh":"Poplight壁灯","vals":[0,0,0,203788,927683],"total":1131471},{"keyword":"gold wall sconce","zh":"金壁灯","vals":[130154,126992,195551,305988,354841],"total":1113526},{"keyword":"cordless wall sconce lights","zh":"无绳壁灯","vals":[0,0,0,396856,632918],"total":1029774},{"keyword":"non hardwired wall sconces","zh":"非硬连线壁灯","vals":[0,0,0,475414,553045],"total":1028459},{"keyword":"black wall sconce","zh":"黑色壁灯","vals":[102656,104811,139775,168724,204275],"total":720241},{"keyword":"wall sconce plug in","zh":"壁灯插头款","vals":[87709,179811,161578,146496,123282],"total":698876},{"keyword":"battery operated wall sconce set of 2","zh":"电池壁灯2件套","vals":[0,0,232050,124727,307080],"total":663857},{"keyword":"outdoor wall sconce","zh":"户外壁灯","vals":[90618,95512,106742,120880,135663],"total":549415},{"keyword":"sconces wall lighting","zh":"壁灯照明","vals":[37019,20390,29117,76650,282293],"total":445469},{"keyword":"plug in wall sconce","zh":"插电壁灯","vals":[59850,83890,82718,105397,98434],"total":430289},{"keyword":"rechargeable wall sconces set of 2","zh":"可充电壁灯2件套","vals":[0,0,79264,133538,118326],"total":331128},{"keyword":"wall sconce","zh":"壁灯","vals":[11039,24525,24193,11106,10652],"total":81515},{"keyword":"wall sconces","zh":"壁灯(复数)","vals":[6130,9319,10613,22368,17510],"total":65940}],"平稳波动型":[{"keyword":"wall candle sconce","zh":"蜡烛壁灯座","vals":[988372,951948,880522,822486,765589],"total":4408917},{"keyword":"brushed nickel wall sconce","zh":"拉丝镍壁灯","vals":[964407,836563,823266,831267,736897],"total":4192400},{"keyword":"wood wall sconce","zh":"木质壁灯","vals":[796907,863426,833148,808627,846227],"total":4148335},{"keyword":"mid century wall sconce","zh":"中世纪壁灯","vals":[732853,840535,824238,690648,819797],"total":3908071},{"keyword":"bronze wall sconce","zh":"青铜壁灯","vals":[759971,822262,842537,757322,674173],"total":3856265},{"keyword":"dimmable wall sconce","zh":"可调光壁灯","vals":[815688,767697,788284,682688,740997],"total":3795354},{"keyword":"art deco wall sconce","zh":"装饰艺术壁灯","vals":[0,995420,909764,881290,865124],"total":3651598},{"keyword":"hallway sconces wall lighting","zh":"走廊壁灯","vals":[0,983315,955105,782759,808546],"total":3529725},{"keyword":"corded wall sconce","zh":"有线壁灯","vals":[828221,570308,676012,682239,729760],"total":3486540},{"keyword":"tiffany wall sconce","zh":"蒂芙尼壁灯","vals":[0,850170,900338,867058,802623],"total":3420189},{"keyword":"indoor wall sconces","zh":"室内壁灯","vals":[0,926005,766603,929384,797031],"total":3419023},{"keyword":"farmhouse wall sconces set of two","zh":"农舍壁灯两件套","vals":[724885,626071,717844,723786,607763],"total":3400349},{"keyword":"black wall sconces","zh":"黑色壁灯","vals":[744289,755912,687071,626397,542384],"total":3356053},{"keyword":"farmhouse sconces wall decor set of 2","zh":"农舍壁灯墙饰2件套","vals":[619956,525454,649405,785930,664819],"total":3245564},{"keyword":"small wall sconce","zh":"小壁灯","vals":[0,881764,783981,759743,702612],"total":3128100},{"keyword":"wall sconce candle","zh":"壁灯蜡烛","vals":[658813,0,835675,663994,839352],"total":2997834},{"keyword":"bathroom wall sconces set of two","zh":"浴室壁灯两件套","vals":[0,846495,811154,635860,671035],"total":2964544},{"keyword":"rechargeable wall sconces set of two","zh":"可充电壁灯两件套","vals":[0,831366,526313,712187,842004],"total":2911870},{"keyword":"wall sconces plug in","zh":"插电壁灯","vals":[663067,500262,412233,647565,651702],"total":2874829},{"keyword":"wall sconces for candles","zh":"蜡烛壁灯","vals":[0,0,976258,927770,881498],"total":2785526},{"keyword":"large wall sconce","zh":"大型壁灯","vals":[0,0,925453,927570,918287],"total":2771310},{"keyword":"bedroom wall sconces set of two","zh":"卧室壁灯两件套","vals":[0,756791,632937,603912,743478],"total":2737118},{"keyword":"exterior wall sconce","zh":"外墙壁灯","vals":[770613,556273,476434,453333,468023],"total":2724676},{"keyword":"outdoor wall sconce lights","zh":"户外壁灯灯具","vals":[0,872208,590395,595533,624495],"total":2682631},{"keyword":"peel and stick wall sconce","zh":"撕贴式壁灯","vals":[0,631476,540250,615691,742591],"total":2530008},{"keyword":"battery powered wall sconces","zh":"电池供电壁灯","vals":[889232,0,533694,550528,538666],"total":2512120},{"keyword":"battery operated wall sconces set of 2","zh":"电池壁灯2件套","vals":[0,0,825383,846698,810866],"total":2482947},{"keyword":"bathroom wall sconce","zh":"浴室壁灯","vals":[639762,456663,465658,390377,495300],"total":2447760},{"keyword":"motion sensor wall sconce","zh":"感应壁灯","vals":[0,0,723575,905631,812308],"total":2441514},{"keyword":"battery operated wall sconce black","zh":"电池壁灯黑色","vals":[0,0,807052,739755,881567],"total":2428374},{"keyword":"wall sconce lights","zh":"壁灯照明","vals":[0,0,786880,786964,825862],"total":2399706},{"keyword":"wall sconce battery","zh":"壁灯电池","vals":[0,0,890025,729901,701056],"total":2320982},{"keyword":"swing arm wall sconce","zh":"摇臂壁灯","vals":[658855,408347,377614,366612,499969],"total":2311397},{"keyword":"outdoor sconces wall lighting","zh":"户外壁灯照明","vals":[536457,353184,313978,351895,525631],"total":2081145},{"keyword":"cordless sconces wall lighting set of 2","zh":"无绳壁灯2件套","vals":[0,598564,560685,436132,479019],"total":2074400},{"keyword":"wall sconce with switch","zh":"带开关壁灯","vals":[354411,439075,442004,416931,419152],"total":2071573},{"keyword":"cordless wall sconces","zh":"无绳壁灯","vals":[0,0,653881,741083,557849],"total":1952813},{"keyword":"indoor wall sconce","zh":"室内壁灯","vals":[451473,369843,379651,304816,398375],"total":1904158},{"keyword":"apartment friendly wall sconce","zh":"公寓友好壁灯","vals":[0,0,0,867487,873426],"total":1740913},{"keyword":"vintage wall sconces battery operated","zh":"复古电池壁灯","vals":[0,0,0,864485,786942],"total":1651427},{"keyword":"candle wall sconces set of two","zh":"蜡烛壁灯两件套","vals":[340793,267795,311276,326618,253430],"total":1499912},{"keyword":"peel and stick wall sconces set of two","zh":"撕贴壁灯两件套","vals":[0,0,758996,283950,395104],"total":1438050},{"keyword":"vintage battery operated wall sconce","zh":"复古电池壁灯","vals":[0,0,0,733814,672571],"total":1406385},{"keyword":"wall candle sconces","zh":"墙面烛台","vals":[281189,235809,228757,255429,235852],"total":1237036},{"keyword":"led wall sconce","zh":"LED壁灯","vals":[243251,230533,161498,164260,188726],"total":988268},{"keyword":"candle sconces wall decor set of 2","zh":"蜡烛壁灯墙饰2件套","vals":[204050,196433,193157,182945,209903],"total":986488},{"keyword":"plug in wall sconces set of 2","zh":"插电壁灯2件套","vals":[0,0,255521,155841,213659],"total":625021},{"keyword":"plug in wall sconces","zh":"插电壁灯","vals":[32467,27207,37094,32337,39981],"total":169086},{"keyword":"wall sconces set of two","zh":"壁灯两件套","vals":[13735,15346,20036,9039,6935],"total":65091}],"持续下降型":[{"keyword":"wall light sconces","zh":"壁灯(组合词)","vals":[791796,858700,554197,531287,364452],"total":3100432},{"keyword":"vintage wall sconces","zh":"复古壁灯","vals":[0,994217,879738,749014,437205],"total":3060174},{"keyword":"adhesive wall sconce","zh":"粘贴式壁灯","vals":[0,878882,830346,762246,428884],"total":2900358},{"keyword":"bathroom wall sconces","zh":"浴室壁灯","vals":[0,946492,790132,642716,341002],"total":2720342},{"keyword":"antique wall sconce","zh":"古董风壁灯","vals":[0,0,971738,882396,741983],"total":2596117},{"keyword":"stick on wall sconce","zh":"贴墙壁灯","vals":[0,923714,702585,600317,232216],"total":2458832},{"keyword":"bedroom wall sconces","zh":"卧室壁灯","vals":[810500,571285,469734,290393,301392],"total":2443304},{"keyword":"renter friendly wall sconce","zh":"租房友好壁灯","vals":[0,0,896555,829686,692410],"total":2418651},{"keyword":"crystal wall sconces","zh":"水晶壁灯","vals":[0,0,866799,905126,642472],"total":2414397},{"keyword":"modern wall sconces","zh":"现代壁灯","vals":[0,726524,709399,625747,287950],"total":2349620},{"keyword":"vintage wall sconce","zh":"复古壁灯","vals":[771380,660671,437538,246446,229603],"total":2345638},{"keyword":"gold battery operated wall sconce","zh":"金色电池壁灯","vals":[0,806244,654915,404833,438780],"total":2304772},{"keyword":"led wall sconces set of two","zh":"LED壁灯两件套","vals":[0,0,921166,632965,669360],"total":2223491},{"keyword":"brass wall sconce","zh":"黄铜壁灯","vals":[568092,593620,523540,248116,267715],"total":2201083},{"keyword":"wall sconce rechargeable","zh":"壁灯可充电","vals":[0,0,885912,734878,558618],"total":2179408},{"keyword":"wall sconces for bedroom","zh":"卧室壁灯","vals":[0,0,983762,771801,398333],"total":2153896},{"keyword":"brass wall sconce battery operated","zh":"黄铜电池壁灯","vals":[0,0,0,996706,876838],"total":1873544},{"keyword":"candle wall sconce","zh":"蜡烛壁灯","vals":[492044,544392,471165,177112,166167],"total":1850880},{"keyword":"battery wall sconces","zh":"电池壁灯","vals":[0,810568,448772,290794,248104],"total":1798238},{"keyword":"black battery operated wall sconce","zh":"黑色电池壁灯","vals":[0,0,754996,513736,524660],"total":1793392},{"keyword":"wall sconce hardwired","zh":"硬接线壁灯","vals":[0,0,0,993971,765895],"total":1759866},{"keyword":"wall candle sconces set of two","zh":"墙面烛台两件套","vals":[680832,384303,335806,147785,152938],"total":1701664},{"keyword":"remote control wall sconces","zh":"遥控壁灯","vals":[0,0,0,932640,737469],"total":1670109},{"keyword":"battery powered wall sconce set of 2","zh":"电池壁灯2件套","vals":[0,0,0,885760,777167],"total":1662927},{"keyword":"battery wall sconces set of two","zh":"电池壁灯两件套","vals":[984701,434906,108566,50611,81137],"total":1659921},{"keyword":"gold wall sconces","zh":"金色壁灯","vals":[0,785566,548548,158456,119391],"total":1611961},{"keyword":"govee wall sconce","zh":"Govee壁灯","vals":[0,0,545232,625948,346077],"total":1517257},{"keyword":"wireless wall sconces","zh":"无线壁灯","vals":[0,652878,535492,262065,56616],"total":1507051},{"keyword":"light sconces wall decor set of 2","zh":"壁灯墙饰2件套","vals":[0,566266,346717,354652,227678],"total":1495313},{"keyword":"wall sconce battery operated","zh":"壁灯电池供电","vals":[535618,387380,225292,177534,167006],"total":1492830},{"keyword":"gold wall sconces battery operated","zh":"金色电池壁灯","vals":[0,0,637661,410387,430452],"total":1478500},{"keyword":"no wire wall sconces set of two","zh":"无线壁灯两件套","vals":[0,0,0,961730,515486],"total":1477216},{"keyword":"battery sconces wall decor set of 2","zh":"电池壁灯墙饰2件套","vals":[0,856305,262169,92889,147091],"total":1358454},{"keyword":"gold sconces wall decor set of 2","zh":"金色壁灯墙饰2件套","vals":[687356,0,229670,176935,161915],"total":1255876},{"keyword":"wall sconces for living room","zh":"客厅壁灯","vals":[0,0,0,891168,343543],"total":1234711},{"keyword":"wireless sconces for wall","zh":"无线壁灯","vals":[0,0,0,701155,530549],"total":1231704},{"keyword":"alabaster wall sconce","zh":"雪花石膏壁灯","vals":[0,0,0,764966,457999],"total":1222965},{"keyword":"stick on sconces wall lighting","zh":"贴墙壁灯照明","vals":[0,0,0,748968,415066],"total":1164034},{"keyword":"cordless wall sconces set of two","zh":"无绳壁灯两件套","vals":[0,0,471050,402109,287696],"total":1160855},{"keyword":"cordless wall sconce","zh":"无绳壁灯","vals":[0,496460,237285,150764,199419],"total":1083928},{"keyword":"wall sconce light","zh":"壁灯","vals":[337984,199542,186773,141174,146176],"total":1011649},{"keyword":"wireless wall sconces set of 2","zh":"无线壁灯2件套","vals":[0,0,0,490537,366498],"total":857035},{"keyword":"battery operated wall sconces","zh":"电池供电壁灯","vals":[376809,173953,85873,59389,87494],"total":783518},{"keyword":"peel and stick wall sconces","zh":"撕贴壁灯","vals":[0,0,0,430083,313838],"total":743921},{"keyword":"wireless wall sconces set of two","zh":"无线壁灯两件套","vals":[0,516505,136638,47818,30290],"total":731251},{"keyword":"wall sconces set of two battery operated","zh":"壁灯两件套电池供电","vals":[350453,186989,80050,43672,43198],"total":704362},{"keyword":"battery powered wall sconce","zh":"电池供电壁灯","vals":[237118,152860,102693,84107,90465],"total":667243},{"keyword":"rechargeable wall sconces","zh":"可充电壁灯","vals":[0,0,281813,210503,161698],"total":654014},{"keyword":"wall sconces battery operated","zh":"壁灯电池供电","vals":[450947,72389,45363,35680,43586],"total":647965},{"keyword":"rechargeable wall sconce","zh":"可充电壁灯","vals":[0,436458,96512,45159,28805],"total":606934},{"keyword":"battery wall sconce","zh":"电池壁灯","vals":[107048,63498,52202,46542,41520],"total":310810},{"keyword":"sconces wall decor set of 2","zh":"壁灯墙饰2件套","vals":[38924,47825,24975,16757,13790],"total":142271},{"keyword":"battery operated wall sconce","zh":"电池供电壁灯","vals":[29608,18172,8566,6656,5986],"total":68988}],"爆发后回落型":[{"keyword":"rattan wall sconce","zh":"藤编壁灯","vals":[982928,600601,486776,305623,454560],"total":2830488},{"keyword":"black wall sconces set of two","zh":"黑色壁灯两件套","vals":[641531,497685,262300,387248,308730],"total":2097494},{"keyword":"wall sconces set of two plug in","zh":"壁灯两件套插电款","vals":[532549,164242,211524,203214,334229],"total":1445758},{"keyword":"sconces wall decor set of 2 battery operated","zh":"壁灯墙饰2件套电池","vals":[0,691885,219055,200472,314028],"total":1425440},{"keyword":"wireless wall sconce","zh":"无线壁灯","vals":[264341,126606,106427,129314,166684],"total":793372}],"新兴/数据不足":[{"keyword":"silver wall sconces","zh":"银色壁灯","vals":[0,0,0,0,976893],"total":976893},{"keyword":"rechargable wall sconce","zh":"可充电壁灯(变体拼写)","vals":[0,0,0,0,906840],"total":906840},{"keyword":"wired wall sconces set of two","zh":"有线壁灯两件套","vals":[0,0,0,0,901009],"total":901009},{"keyword":"antique brass wall sconce","zh":"古铜壁灯","vals":[0,0,0,0,877376],"total":877376},{"keyword":"niorsun battery operated wall sconce set of 2","zh":"Niorsun电池壁灯2件套","vals":[0,0,0,0,869498],"total":869498},{"keyword":"marble wall sconce","zh":"大理石壁灯","vals":[0,0,0,0,848951],"total":848951},{"keyword":"stick on wall sconces","zh":"贴墙壁灯","vals":[0,0,0,0,848878],"total":848878},{"keyword":"cordless wall light sconce","zh":"无绳壁灯","vals":[0,0,0,0,848231],"total":848231},{"keyword":"wall sconces set of two battery","zh":"壁灯两件套电池款","vals":[0,0,0,0,842596],"total":842596},{"keyword":"boho wall sconces","zh":"波西米亚壁灯","vals":[0,0,0,0,806639],"total":806639},{"keyword":"remote wall sconces","zh":"遥控壁灯","vals":[0,0,0,0,762467],"total":762467},{"keyword":"hardwired wall sconce","zh":"硬接线壁灯","vals":[0,0,0,0,746830],"total":746830},{"keyword":"wireless wall sconces with remote","zh":"无线遥控壁灯","vals":[0,0,0,0,721628],"total":721628},{"keyword":"battery operated wall sconces light","zh":"电池壁灯照明","vals":[0,0,0,0,670947],"total":670947},{"keyword":"modern sconces wall decor set of 2","zh":"现代壁灯墙饰2件套","vals":[0,0,0,0,642715],"total":642715},{"keyword":"led sconces wall decor set of 2","zh":"LED壁灯墙饰2件套","vals":[0,0,0,0,627320],"total":627320},{"keyword":"no drill wall sconce","zh":"免钻孔壁灯","vals":[0,0,0,0,571575],"total":571575},{"keyword":"gothic wall sconces","zh":"哥特风壁灯","vals":[0,0,0,0,543052],"total":543052},{"keyword":"solar wall sconces","zh":"太阳能壁灯","vals":[0,0,0,0,480912],"total":480912},{"keyword":"peel and stick wireless wall sconces","zh":"撕贴无线壁灯","vals":[0,0,0,0,470683],"total":470683}]};
+
+const YEARS=[2021,2022,2023,2024,2025];
+let activeCat='all';
+
+// flatten
+const allRows=[];
+for(const [cat,rows] of Object.entries(RAW)){
+  rows.forEach(r=>allRows.push({...r,cat}));
+}
+
+function fmt(n){return n>0?n.toLocaleString():'-'}
+function fmtK(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':n>0?n:''}
+
+function sparkline(vals,color){
+  const max=Math.max(...vals,1);
+  return '<div class="sparkline">'+vals.map(v=>{
+    const h=Math.max(2,Math.round((v/max)*22));
+    const op=v>0?1:0.15;
+    return `<div class="spark-bar" style="height:${h}px;background:${color};opacity:${op}"></div>`;
+  }).join('')+'</div>';
+}
+
+function buildSummary(){
+  const div=document.getElementById('summary');
+  const counts={all:allRows.length};
+  allRows.forEach(r=>counts[r.cat]=(counts[r.cat]||0)+1);
+  const items=[{id:'all',label:'全部关键词',color:'#888780',bg:'#F1EFE8',text:'#444441'},...Object.entries(CATS).map(([id,c])=>({id,...c}))];
+  div.innerHTML=items.map(c=>`<div class="scard${activeCat===c.id?' on':''}" style="background:${c.bg};color:${c.text}" onclick="setTab('${c.id}')">
+    <div class="scard-label">${c.label||'全部'}</div>
+    <div class="scard-n">${counts[c.id]||0}</div>
+  </div>`).join('');
+}
+
+function setTab(id){activeCat=id;buildSummary();render();}
+
+function render(){
+  const q=document.getElementById('q').value.toLowerCase();
+  let rows=allRows.filter(r=>{
+    if(activeCat!=='all'&&r.cat!==activeCat)return false;
+    if(q&&!r.keyword.toLowerCase().includes(q)&&!r.zh.includes(q))return false;
+    return true;
+  });
+  rows.sort((a,b)=>b.total-a.total);
+  document.getElementById('meta').textContent=`共 ${rows.length} 条`;
+  document.getElementById('tb').innerHTML=rows.map((r,i)=>{
+    const c=CATS[r.cat];
+    return `<tr>
+      <td style="color:var(--color-text-secondary)">${i+1}</td>
+      <td style="font-size:12px;max-width:180px">${r.keyword}</td>
+      <td style="color:var(--color-text-secondary);font-size:11px;max-width:100px">${r.zh}</td>
+      <td><span class="trend-badge" style="background:${c.bg};color:${c.text}">${c.label}</span></td>
+      <td>${sparkline(r.vals,c.color)}</td>
+      ${r.vals.map(v=>`<td class="num" style="color:${v>0?'var(--color-text-primary)':'var(--color-text-secondary)'}">${fmtK(v)}</td>`).join('')}
+      <td class="num" style="font-weight:500">${fmtK(r.total)}</td>
+    </tr>`;
+  }).join('');
+}
+
+buildSummary();
+render();
+</script>
