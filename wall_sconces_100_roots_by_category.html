@@ -1,0 +1,223 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{padding:1rem 0}
+input[type=text]{width:100%;padding:7px 12px;font-size:13px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);margin-bottom:1rem}
+.cat-block{margin-bottom:1.5rem}
+.cat-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cat-title{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.cat-count{font-size:12px;color:var(--color-text-secondary)}
+.cat-bar{height:4px;border-radius:2px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+tbody tr{border-bottom:0.5px solid var(--color-border-tertiary)}
+tbody tr:last-child{border-bottom:none}
+td{padding:5px 8px;vertical-align:middle}
+.freq{font-weight:500;color:var(--color-text-primary)}
+.zh{color:var(--color-text-secondary);font-size:12px}
+.root{font-family:var(--font-mono);font-size:13px}
+.bar-mini{display:inline-block;height:6px;border-radius:3px;vertical-align:middle;margin-left:4px}
+.tab-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.tab{padding:4px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);font-size:12px;cursor:pointer;color:var(--color-text-secondary);background:transparent}
+.tab.on{color:var(--color-background-primary);border-color:transparent}
+.meta{font-size:12px;color:var(--color-text-secondary);margin-bottom:0.75rem}
+</style>
+<div class="wrap">
+<input type="text" id="q" placeholder="搜索词根或中文释义..." oninput="render()">
+<div class="tab-row" id="tabs"></div>
+<div class="meta" id="meta"></div>
+<div id="body"></div>
+</div>
+<script>
+const cats=[
+  {id:'all',label:'全部',color:'#888780'},
+  {id:'core',label:'品类主词',color:'#378ADD'},
+  {id:'supply',label:'供电/光源',color:'#1D9E75'},
+  {id:'install',label:'安装方式',color:'#BA7517'},
+  {id:'qty',label:'数量/套装',color:'#7F77DD'},
+  {id:'color',label:'颜色',color:'#D85A30'},
+  {id:'style',label:'风格/造型',color:'#D4537E'},
+  {id:'scene',label:'使用场景',color:'#185FA5'},
+  {id:'material',label:'材质/形态',color:'#639922'},
+  {id:'control',label:'控制方式',color:'#5F5E5A'},
+  {id:'brand',label:'品牌词',color:'#993C1D'},
+  {id:'size',label:'尺寸',color:'#A32D2D'},
+];
+
+const data=[
+  // 品类主词
+  {root:'wall',freq:200,cat:'core',zh:'墙/壁（核心介词）'},
+  {root:'sconce',freq:200,cat:'core',zh:'壁灯座（单数）'},
+  {root:'sconces',freq:180,cat:'core',zh:'壁灯座（复数）'},
+  {root:'light',freq:18,cat:'core',zh:'灯/照明'},
+  {root:'lighting',freq:10,cat:'core',zh:'照明（品类泛词）'},
+  {root:'lights',freq:4,cat:'core',zh:'灯（复数）'},
+  {root:'lamp',freq:2,cat:'core',zh:'灯具'},
+  {root:'decor',freq:10,cat:'core',zh:'装饰/家居装饰'},
+  // 供电/光源
+  {root:'battery',freq:55,cat:'supply',zh:'电池'},
+  {root:'operated',freq:35,cat:'supply',zh:'供电运行（battery operated）'},
+  {root:'wireless',freq:14,cat:'supply',zh:'无线'},
+  {root:'rechargeable',freq:14,cat:'supply',zh:'可充电'},
+  {root:'rechargable',freq:3,cat:'supply',zh:'可充电（常见误拼）'},
+  {root:'cordless',freq:9,cat:'supply',zh:'无绳'},
+  {root:'powered',freq:8,cat:'supply',zh:'供电（battery powered）'},
+  {root:'led',freq:8,cat:'supply',zh:'LED光源'},
+  {root:'solar',freq:2,cat:'supply',zh:'太阳能'},
+  {root:'electric',freq:2,cat:'supply',zh:'电力'},
+  // 安装方式
+  {root:'plug',freq:12,cat:'install',zh:'插头'},
+  {root:'in',freq:12,cat:'install',zh:'插入（plug in组合）'},
+  {root:'peel',freq:8,cat:'install',zh:'撕贴（peel and stick）'},
+  {root:'stick',freq:13,cat:'install',zh:'粘贴/贴墙'},
+  {root:'adhesive',freq:2,cat:'install',zh:'胶粘安装'},
+  {root:'no',freq:6,cat:'install',zh:'无（no wire/no drill）'},
+  {root:'wire',freq:8,cat:'install',zh:'电线/走线'},
+  {root:'drill',freq:2,cat:'install',zh:'钻孔'},
+  {root:'hardwired',freq:4,cat:'install',zh:'硬接线'},
+  {root:'wired',freq:3,cat:'install',zh:'有线'},
+  {root:'magnetic',freq:2,cat:'install',zh:'磁吸安装'},
+  {root:'non',freq:2,cat:'install',zh:'非（non hardwired）'},
+  {root:'mounted',freq:4,cat:'install',zh:'壁挂/挂墙'},
+  {root:'mount',freq:3,cat:'install',zh:'安装/挂墙'},
+  {root:'corded',freq:2,cat:'install',zh:'有线插电'},
+  {root:'renter',freq:2,cat:'install',zh:'租房友好（免打孔场景）'},
+  {root:'friendly',freq:2,cat:'install',zh:'友好/适合（renter friendly）'},
+  // 数量/套装
+  {root:'set',freq:62,cat:'qty',zh:'套装'},
+  {root:'of',freq:62,cat:'qty',zh:'连接词（set of）'},
+  {root:'two',freq:52,cat:'qty',zh:'两只'},
+  {root:'2',freq:42,cat:'qty',zh:'数字2'},
+  // 颜色
+  {root:'gold',freq:12,cat:'color',zh:'金色'},
+  {root:'black',freq:12,cat:'color',zh:'黑色'},
+  {root:'brass',freq:5,cat:'color',zh:'黄铜色'},
+  {root:'bronze',freq:3,cat:'color',zh:'青铜色'},
+  {root:'antique brass',freq:2,cat:'color',zh:'古铜色'},
+  {root:'silver',freq:2,cat:'color',zh:'银色'},
+  {root:'brushed',freq:2,cat:'color',zh:'拉丝（拉丝镍）'},
+  {root:'nickel',freq:2,cat:'color',zh:'镍色'},
+  {root:'white',freq:2,cat:'color',zh:'白色'},
+  // 风格/造型
+  {root:'farmhouse',freq:8,cat:'style',zh:'农舍风（美式乡村）'},
+  {root:'vintage',freq:6,cat:'style',zh:'复古风'},
+  {root:'modern',freq:5,cat:'style',zh:'现代简约风'},
+  {root:'rustic',freq:3,cat:'style',zh:'乡村粗犷风'},
+  {root:'antique',freq:3,cat:'style',zh:'古董做旧风'},
+  {root:'industrial',freq:2,cat:'style',zh:'工业风'},
+  {root:'gothic',freq:2,cat:'style',zh:'哥特风'},
+  {root:'boho',freq:2,cat:'style',zh:'波西米亚风'},
+  {root:'mid century',freq:2,cat:'style',zh:'中世纪现代风'},
+  {root:'art deco',freq:2,cat:'style',zh:'装饰艺术风'},
+  {root:'swing arm',freq:2,cat:'style',zh:'摇臂可调节'},
+  {root:'decorative',freq:2,cat:'style',zh:'装饰性'},
+  {root:'hand carved',freq:2,cat:'style',zh:'手工雕刻'},
+  // 使用场景
+  {root:'bedroom',freq:7,cat:'scene',zh:'卧室'},
+  {root:'bathroom',freq:6,cat:'scene',zh:'浴室'},
+  {root:'room',freq:6,cat:'scene',zh:'房间（通用）'},
+  {root:'living room',freq:4,cat:'scene',zh:'客厅'},
+  {root:'outdoor',freq:5,cat:'scene',zh:'户外'},
+  {root:'hallway',freq:3,cat:'scene',zh:'走廊'},
+  {root:'indoor',freq:3,cat:'scene',zh:'室内'},
+  {root:'exterior',freq:2,cat:'scene',zh:'外墙'},
+  {root:'apartment',freq:2,cat:'scene',zh:'公寓'},
+  // 材质/形态
+  {root:'candle',freq:14,cat:'material',zh:'蜡烛/仿蜡烛款'},
+  {root:'holder',freq:6,cat:'material',zh:'托架/底座'},
+  {root:'crystal',freq:2,cat:'material',zh:'水晶'},
+  {root:'rattan',freq:2,cat:'material',zh:'藤编'},
+  {root:'alabaster',freq:2,cat:'material',zh:'雪花石膏'},
+  {root:'marble',freq:2,cat:'material',zh:'大理石'},
+  {root:'wood',freq:2,cat:'material',zh:'木质'},
+  {root:'wooden',freq:2,cat:'material',zh:'木制'},
+  {root:'glass',freq:2,cat:'material',zh:'玻璃'},
+  {root:'milk glass',freq:2,cat:'material',zh:'乳白玻璃'},
+  {root:'tiffany',freq:2,cat:'material',zh:'蒂芙尼彩色玻璃'},
+  // 控制方式
+  {root:'remote',freq:5,cat:'control',zh:'遥控'},
+  {root:'control',freq:4,cat:'control',zh:'控制'},
+  {root:'dimmable',freq:3,cat:'control',zh:'可调光'},
+  {root:'switch',freq:2,cat:'control',zh:'开关'},
+  {root:'motion sensor',freq:2,cat:'control',zh:'感应开关'},
+  // 品牌词
+  {root:'koopala',freq:3,cat:'brand',zh:'品牌词（主拼写）'},
+  {root:'koopola',freq:2,cat:'brand',zh:'品牌词（变体1）'},
+  {root:'koopla',freq:1,cat:'brand',zh:'品牌词（变体2）'},
+  {root:'govee',freq:2,cat:'brand',zh:'竞品品牌'},
+  {root:'niorsun',freq:2,cat:'brand',zh:'竞品品牌'},
+  {root:'kartoosh',freq:2,cat:'brand',zh:'竞品品牌'},
+  {root:'poplight',freq:2,cat:'brand',zh:'竞品品牌'},
+  // 尺寸
+  {root:'large',freq:2,cat:'size',zh:'大号'},
+  {root:'small',freq:2,cat:'size',zh:'小号'},
+];
+
+let activeCat='all';
+
+function render(){
+  const q=document.getElementById('q').value.toLowerCase();
+  const catColor=Object.fromEntries(cats.map(c=>[c.id,c.color]));
+
+  // group
+  const groups={};
+  cats.forEach(c=>{if(c.id!=='all')groups[c.id]=[]});
+  data.forEach(d=>{
+    if(activeCat!=='all'&&d.cat!==activeCat)return;
+    if(q&&!d.root.toLowerCase().includes(q)&&!d.zh.includes(q))return;
+    if(!groups[d.cat])groups[d.cat]=[];
+    groups[d.cat].push(d);
+  });
+
+  const maxFreq=200;
+  let total=0;
+  let html='';
+  const catMeta=cats.filter(c=>c.id!=='all');
+  catMeta.forEach(c=>{
+    const rows=groups[c.id]||[];
+    if(!rows.length)return;
+    rows.sort((a,b)=>b.freq-a.freq);
+    total+=rows.length;
+    html+=`<div class="cat-block">
+      <div class="cat-header">
+        <div style="width:10px;height:10px;border-radius:2px;background:${c.color};flex-shrink:0"></div>
+        <span class="cat-title">${c.label}</span>
+        <span class="cat-count">${rows.length} 个词根</span>
+      </div>
+      <div class="cat-bar" style="width:${Math.min(rows.length*18,100)}%;background:${c.color}22;border-left:3px solid ${c.color}"></div>
+      <table>
+        <thead><tr><th style="width:22px">#</th><th>词根</th><th style="width:42px">频次</th><th style="width:180px">热度</th><th>中文释义</th></tr></thead>
+        <tbody>${rows.map((d,i)=>`<tr>
+          <td style="color:var(--color-text-secondary)">${i+1}</td>
+          <td class="root">${d.root}</td>
+          <td class="freq">${d.freq}</td>
+          <td><div style="display:flex;align-items:center;gap:4px">
+            <div style="width:${Math.round(d.freq/maxFreq*120)}px;height:6px;border-radius:3px;background:${c.color};opacity:0.7"></div>
+            <span style="font-size:11px;color:var(--color-text-secondary)">${Math.round(d.freq/maxFreq*100)}%</span>
+          </div></td>
+          <td class="zh">${d.zh}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  });
+
+  document.getElementById('meta').textContent=`显示 ${total} 个词根`;
+  document.getElementById('body').innerHTML=html||'<p style="color:var(--color-text-secondary);font-size:13px;padding:1rem 0">未找到匹配词根</p>';
+}
+
+function buildTabs(){
+  const counts={all:data.length};
+  data.forEach(d=>counts[d.cat]=(counts[d.cat]||0)+1);
+  const row=document.getElementById('tabs');
+  row.innerHTML=cats.map(c=>`<button class="tab${c.id===activeCat?' on':''}" style="${c.id===activeCat?'background:'+c.color:'background:transparent'}" onclick="setTab('${c.id}')">${c.label}${counts[c.id]?` (${counts[c.id]})`:''}</button>`).join('');
+}
+
+function setTab(id){
+  activeCat=id;
+  buildTabs();
+  render();
+}
+
+buildTabs();
+render();
+</script>
