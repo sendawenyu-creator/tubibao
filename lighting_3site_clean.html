@@ -1,0 +1,281 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary);font-size:13px}
+.nav{display:flex;gap:6px;padding:1rem 0 .85rem;flex-wrap:wrap}
+.nb{padding:5px 16px;border-radius:20px;border:.5px solid var(--color-border-secondary);font-size:12px;cursor:pointer;background:transparent;color:var(--color-text-secondary)}
+.nb.on{background:#378ADD;color:#fff;border-color:#378ADD}
+.pg{display:none}.pg.on{display:block}
+.sec{font-size:10px;font-weight:500;color:var(--color-text-secondary);letter-spacing:.06em;text-transform:uppercase;margin:1.25rem 0 .6rem;padding-bottom:4px;border-bottom:.5px solid var(--color-border-tertiary)}
+.mrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
+.mc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.mc-site{font-size:11px;color:var(--color-text-secondary);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.mc-dot{width:8px;height:8px;border-radius:50%}
+.mc-n{font-size:22px;font-weight:500;font-family:var(--font-mono)}
+.mc-lbl{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.mc-sub{font-size:11px;color:var(--color-text-secondary);margin-top:8px;padding-top:8px;border-top:.5px solid var(--color-border-tertiary);line-height:1.6}
+.hr{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.hl{font-size:11px;width:190px;flex-shrink:0;text-align:right;line-height:1.3;color:var(--color-text-primary)}
+.ht{flex:1;background:var(--color-background-secondary);border-radius:3px;height:20px;overflow:hidden}
+.hf{height:100%;border-radius:3px;display:flex;align-items:center;padding:0 8px;font-size:10px;font-family:var(--font-mono);font-weight:500;color:#fff;min-width:2px}
+.hv{font-size:10px;font-family:var(--font-mono);color:var(--color-text-secondary);width:54px}
+.dg{display:grid;grid-template-columns:1fr 1fr 1fr;border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:10px}
+.dh{background:var(--color-background-secondary);padding:8px 12px;font-size:10px;font-weight:500;color:var(--color-text-secondary);border-bottom:.5px solid var(--color-border-tertiary)}
+.dc{padding:9px 12px;border-bottom:.5px solid var(--color-border-tertiary);border-right:.5px solid var(--color-border-tertiary);font-size:11px;line-height:1.55}
+.dc:nth-child(3n){border-right:none}
+.dc.last{border-bottom:none}
+.us{color:#0C447C;font-weight:500}.uk{color:#712B13;font-weight:500}.au{color:#085041;font-weight:500}
+.dim{color:var(--color-text-secondary)}
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-align:left;padding:6px 8px;border-bottom:.5px solid var(--color-border-tertiary)}
+.tbl td{padding:6px 8px;border-bottom:.5px solid var(--color-border-tertiary);line-height:1.45;vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--color-background-secondary)}
+.tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;margin:1px 2px 0 0}
+.t-us{background:#E6F1FB;color:#0C447C}
+.t-uk{background:#FAECE7;color:#712B13}
+.t-au{background:#E1F5EE;color:#085041}
+.t-all{background:#F1EFE8;color:#444441}
+.ogg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.oc{border-radius:var(--border-radius-lg);border:.5px solid var(--color-border-tertiary);padding:14px 16px}
+.on2{font-size:10px;font-weight:500;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:8px}
+.ot{font-size:13px;font-weight:500;margin-bottom:6px;line-height:1.4}
+.ob{font-size:11px;color:var(--color-text-secondary);line-height:1.6}
+.os{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.note{margin-top:.75rem;padding:10px 14px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:11px;color:var(--color-text-secondary);line-height:1.7}
+</style>
+
+<div class="nav">
+  <button class="nb on" onclick="go('p1',this)">规模总览</button>
+  <button class="nb" onclick="go('p2',this)">结构差异</button>
+  <button class="nb" onclick="go('p3',this)">子类目对比</button>
+  <button class="nb" onclick="go('p4',this)">进入机会</button>
+</div>
+
+<!-- P1 -->
+<div class="pg on" id="p1">
+<div class="mrow">
+  <div class="mc">
+    <div class="mc-site"><span class="mc-dot" style="background:#378ADD"></span>美国站 US</div>
+    <div class="mc-n">143,030</div>
+    <div class="mc-lbl">类目总 SKU</div>
+    <div class="mc-sub">一级类目：Lighting & Ceiling Fans<br>8个二级 · 56个三级类目<br>最大类：户外照明 33,362</div>
+  </div>
+  <div class="mc">
+    <div class="mc-site"><span class="mc-dot" style="background:#D85A30"></span>英国站 UK</div>
+    <div class="mc-n">57,945</div>
+    <div class="mc-lbl">类目总 SKU</div>
+    <div class="mc-sub">一级类目：Lighting<br>8个二级 · 46个三级类目<br>最大类：室内照明 32,903</div>
+  </div>
+  <div class="mc">
+    <div class="mc-site"><span class="mc-dot" style="background:#1D9E75"></span>澳洲站 AU</div>
+    <div class="mc-n">4,215+</div>
+    <div class="mc-lbl">已知四级 SKU（数据不完整）</div>
+    <div class="mc-sub">一级类目：Lighting<br>2个二级 · 16个三级类目<br>最大类：吊灯 487</div>
+  </div>
+</div>
+
+<div class="sec">美国站 — 二级类目规模</div>
+<div id="us-bars"></div>
+
+<div class="sec" style="margin-top:1rem">英国站 — 二级类目规模</div>
+<div id="uk-bars"></div>
+
+<div class="sec" style="margin-top:1rem">澳洲站 — 四级类目（有数据）</div>
+<div id="au-bars"></div>
+</div>
+
+<!-- P2 -->
+<div class="pg" id="p2">
+<div class="sec">类目数量与层级对比</div>
+<div class="dg">
+  <div class="dh">维度</div><div class="dh">🇺🇸 美国站</div><div class="dh">🇬🇧 英国站</div>
+  <div class="dc dim">一级类目名</div><div class="dc">Lighting & Ceiling Fans</div><div class="dc">Lighting</div>
+  <div class="dc dim">二级类目数</div><div class="dc us">8个</div><div class="dc uk">8个</div>
+  <div class="dc dim">三级类目数</div><div class="dc us">~56个（最细）</div><div class="dc uk">~46个</div>
+  <div class="dc dim">总 SKU</div><div class="dc us">143,030</div><div class="dc uk">57,945</div>
+  <div class="dc last dim">竞争烈度</div><div class="dc last" style="color:#A32D2D;font-weight:500">最高</div><div class="dc last" style="color:#854F0B;font-weight:500">中等</div>
+</div>
+
+<div class="sec">三站独有类目结构</div>
+<div class="dg">
+  <div class="dh">类目</div><div class="dh">🇺🇸 美国站</div><div class="dh">🇬🇧 英国站</div>
+  <div class="dc dim">吊扇</div>
+  <div class="dc"><span class="us">独立二级类目</span><br>10,873 SKU<br><span class="dim">气候刚需，无可替代</span></div>
+  <div class="dc"><span class="dim">无独立类目</span><br>英国气候无此需求</div>
+
+  <div class="dc dim">灯泡</div>
+  <div class="dc"><span class="dim">归入配件类</span></div>
+  <div class="dc"><span class="uk">独立二级类目</span><br>10,359 SKU<br>LED 占比 64%</div>
+
+  <div class="dc dim">浴室灯</div>
+  <div class="dc"><span class="dim">归入壁灯类</span><br>无专属入口</div>
+  <div class="dc"><span class="uk">独立二级类目</span><br>795 SKU · IP防护严格</div>
+
+  <div class="dc dim">串灯</div>
+  <div class="dc">散落户外类<br>6,625 SKU</div>
+  <div class="dc"><span class="uk">独立二级类目</span><br>4,815 SKU</div>
+
+  <div class="dc dim">创意/趣味灯</div>
+  <div class="dc"><span class="us">独立二级类目</span><br>20,652 SKU<br>液态灯/盐灯/灯带</div>
+  <div class="dc"><span class="dim">归入装饰灯</span></div>
+
+  <div class="dc dim">商业照明</div>
+  <div class="dc"><span class="us">独立二级类目</span><br>3,483 SKU</div>
+  <div class="dc"><span class="dim">归入室内类</span></div>
+
+  <div class="dc last dim">澳洲特有</div>
+  <div class="dc last"><span class="dim">无对应</span></div>
+  <div class="dc last"><span class="dim">无对应</span><br>澳洲有 Pool Lighting、Decking & Patio 等独有细分，反映本土生活方式</div>
+</div>
+</div>
+
+<!-- P3 -->
+<div class="pg" id="p3">
+<div class="sec">户外照明子类目对比（US vs UK）</div>
+<table class="tbl">
+  <thead><tr><th>子类目</th><th>🇺🇸 US（SKU）</th><th>🇬🇧 UK（SKU）</th></tr></thead>
+  <tbody>
+    <tr><td>景观照明</td><td class="us">Landscape Lighting 10,258</td><td class="uk">Pathway Lighting 2,163</td></tr>
+    <tr><td>串灯</td><td class="us">6,625（户外类内）</td><td class="uk">4,815（独立二级类）</td></tr>
+    <tr><td>门廊露台灯</td><td class="us">Porch & Patio 5,728</td><td class="uk">Outdoor Wall Lights 2,380</td></tr>
+    <tr><td>泛光安全灯</td><td class="us">Flood & Security 2,742</td><td class="uk">Security 215 · Flood & Spot 985</td></tr>
+    <tr><td>灯笼</td><td class="us">2,128</td><td class="uk">1,287</td></tr>
+    <tr><td>立柱灯</td><td class="us">1,607</td><td class="uk">322</td></tr>
+    <tr><td>装饰投影灯</td><td class="us">657</td><td class="uk">134</td></tr>
+    <tr><td>露台/甲板灯</td><td class="us">Floor Lamps 173</td><td class="uk">Decking & Patio 255</td></tr>
+    <tr><td>泳池灯</td><td class="us" style="color:var(--color-text-secondary)">无独立类目</td><td class="uk">Pond Lights 340</td></tr>
+    <tr><td>浴室灯</td><td class="us" style="color:var(--color-text-secondary)">归入壁灯类</td><td class="uk">独立类目 795</td></tr>
+  </tbody>
+</table>
+
+<div class="sec" style="margin-top:1.25rem">室内照明子类目对比（US vs UK）</div>
+<table class="tbl">
+  <thead><tr><th>子类目</th><th>🇺🇸 US（SKU）</th><th>🇬🇧 UK（SKU）</th></tr></thead>
+  <tbody>
+    <tr><td>台灯</td><td class="us">Table Lamps 10,381</td><td class="uk">含在 Lamps 4,291 内</td></tr>
+    <tr><td>夜灯</td><td class="us">Night Lights 10,371（壁灯类）</td><td class="uk" style="color:var(--color-text-secondary)">无独立类目</td></tr>
+    <tr><td>落地灯</td><td class="us">Floor Lamps 4,557</td><td class="uk">含在 Lamps 内</td></tr>
+    <tr><td>吊灯</td><td class="us">Chandeliers 7,243</td><td class="uk">含在 Ceiling 3,086 内</td></tr>
+    <tr><td>壁灯</td><td class="us">Wall Lights 7,230</td><td class="uk">Wall Fixtures 1,538</td></tr>
+    <tr><td>镜前灯</td><td class="us">Vanity 3,526</td><td class="uk">Vanity 50</td></tr>
+    <tr><td>橱柜灯</td><td class="us">Under-Cabinet 2,740</td><td class="uk">516</td></tr>
+    <tr><td>射灯/轨道灯</td><td class="us">Track Lighting 2,114</td><td class="uk">Spotlights & Spotbars 594</td></tr>
+    <tr><td>儿童灯</td><td class="us" style="color:var(--color-text-secondary)">无独立类目</td><td class="uk">Children's 429</td></tr>
+    <tr><td>装饰特色灯</td><td class="us">Novelty 20,652（独立大类）</td><td class="uk">Specialty 6,529（室内子类）</td></tr>
+    <tr><td>智能灯泡</td><td class="us" style="color:var(--color-text-secondary)">归入配件</td><td class="uk">Wi-Fi Bulbs 73（蓝海）</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- P4 -->
+<div class="pg" id="p4">
+<div class="sec">六大进入机会</div>
+<div class="ogg">
+  <div class="oc" style="border-color:#1D9E7566">
+    <div class="on2" style="background:#E1F5EE;color:#085041">1</div>
+    <div class="ot">澳洲站 — 全品类低竞争入口</div>
+    <div class="ob">类目最简、SKU密度最低、竞争几乎为零。台灯、吊灯、壁灯均有类目承接，适合低成本测款后再横向扩至 US/UK。Pool Lighting 是澳洲独有，泳池户主消费力强。</div>
+    <div class="os"><span class="tag t-au">AU 首选</span><span class="tag t-all">低竞争</span></div>
+  </div>
+  <div class="oc" style="border-color:#1D9E7566">
+    <div class="on2" style="background:#E1F5EE;color:#085041">2</div>
+    <div class="ot">UK 浴室灯 — 结构性差异机会</div>
+    <div class="ob">UK独立二级类目（795 SKU），US无此入口。英国建筑法规要求IP44+防护，形成天然准入门槛。竞争数量少、客单价高、复购稳定。有壁灯产品的卖家做防水版可直接切入。</div>
+    <div class="os"><span class="tag t-uk">UK 独有</span><span class="tag t-all">法规壁垒</span></div>
+  </div>
+  <div class="oc" style="border-color:#378ADD66">
+    <div class="on2" style="background:#E6F1FB;color:#0C447C">3</div>
+    <div class="ot">UK 串灯 — 独立大类且竞争低于 US</div>
+    <div class="ob">UK将串灯独立设为二级类目（4,815 SKU），流量入口更集中，而US同类散落在户外类竞争更烈。英国节日文化浓厚（Guy Fawkes、圣诞等），全年有稳定基础需求。</div>
+    <div class="os"><span class="tag t-uk">UK 独立</span><span class="tag t-all">全年需求</span></div>
+  </div>
+  <div class="oc" style="border-color:#378ADD66">
+    <div class="on2" style="background:#E6F1FB;color:#0C447C">4</div>
+    <div class="ot">US 户外景观照明 — 最大单一子类</div>
+    <div class="ob">Landscape Lighting 以 10,258 SKU 居 US 子类之首。路径灯套装、埋地灯、射灯是主流。细分到套装产品或低压12V系统兼容型仍有切入空间，体量大意味着长尾机会多。</div>
+    <div class="os"><span class="tag t-us">US 最大子类</span><span class="tag t-all">细分切入</span></div>
+  </div>
+  <div class="oc" style="border-color:#BA751766">
+    <div class="on2" style="background:#FAEEDA;color:#633806">5</div>
+    <div class="ot">UK 智能灯泡 — 蓝海细分</div>
+    <div class="ob">UK将灯泡设为独立大类（10,359 SKU），其中 Wi-Fi 智能灯泡仅 73 条，与 LED 灯泡 6,640 条相比极不成熟。智能家居渗透率快速提升，是低竞争高增长的切口。需注意UK 220-240V规格。</div>
+    <div class="os"><span class="tag t-uk">UK 独立大类</span><span class="tag t-all">蓝海细分</span></div>
+  </div>
+  <div class="oc" style="border-color:#BA751766">
+    <div class="on2" style="background:#FAEEDA;color:#633806">6</div>
+    <div class="ot">US 创意灯 Novelty — 本土化大类</div>
+    <div class="ob">20,652 SKU 独立大类，UK/AU 均无对应入口。Flameless Candles（3,689）和 LED 灯带（3,819）是其中标准化程度更高、更易规模化的细分。季节节日关联度强，需提前备货。</div>
+    <div class="os"><span class="tag t-us">US 独有</span><span class="tag t-all">本土文化驱动</span></div>
+  </div>
+</div>
+
+<div class="sec" style="margin-top:1.25rem">品类 × 站点优先级</div>
+<table class="tbl">
+  <thead><tr><th>品类</th><th>🇺🇸 US</th><th>🇬🇧 UK</th><th>🇦🇺 AU</th></tr></thead>
+  <tbody>
+    <tr><td>台灯 / 落地灯</td><td>★★★ 体量大竞争高</td><td>★★★ 结构类似</td><td class="au">★★★★★ 首选测款</td></tr>
+    <tr><td>壁灯</td><td class="us">★★★★ 23,615 SKU</td><td>★★★ 1,538 SKU</td><td class="au">★★★★ 竞争极低</td></tr>
+    <tr><td>户外门廊灯</td><td class="us">★★★★★ 5,728</td><td class="uk">★★★★ OW 2,380</td><td>★★ 体量小</td></tr>
+    <tr><td>串灯</td><td>★★★ 分散竞争烈</td><td class="uk">★★★★★ 独立类目</td><td>★★</td></tr>
+    <tr><td>浴室灯</td><td>★★ 无专属入口</td><td class="uk">★★★★★ 独立类目</td><td>★★</td></tr>
+    <tr><td>景观照明</td><td class="us">★★★★★ 10,258</td><td>★★★ 2,163</td><td>★★</td></tr>
+    <tr><td>智能灯泡</td><td>★★ 归入配件</td><td class="uk">★★★★ Wi-Fi仅73</td><td>★</td></tr>
+    <tr><td>创意装饰灯</td><td class="us">★★★★ 20,652</td><td>★★ 无独立类</td><td>★★</td></tr>
+  </tbody>
+</table>
+<div class="note">澳洲站建议作为所有品类的低成本首测站点，类目体量虽小但竞争极低，适合验证产品力后再规模化扩展至 US / UK。</div>
+</div>
+
+<script>
+function go(id,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>{b.classList.remove('on');b.style.background='';b.style.color=''});
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+}
+
+function bar(label,val,max,color,showInside){
+  var p=Math.round(val/max*95);
+  var inside=showInside?val.toLocaleString():'';
+  var outside=showInside?'':val.toLocaleString();
+  return '<div class="hr"><div class="hl">'+label+'</div><div class="ht"><div class="hf" style="width:'+p+'%;background:'+color+'">'+inside+'</div></div><div class="hv">'+outside+'</div></div>';
+}
+
+var usData=[
+  ['户外照明 Outdoor Lighting',33362],
+  ['吸顶灯 Ceiling Lights',25913],
+  ['壁灯 Wall Lights',23615],
+  ['台灯落地灯 Lamps & Shades',21299],
+  ['创意灯 Novelty Lighting',20652],
+  ['吊扇 Ceiling Fans',10873],
+  ['照明配件 Accessories',3833],
+  ['商业照明 Commercial',3483]
+];
+var ukData=[
+  ['室内照明 Indoor Lighting',32903],
+  ['灯泡 Light Bulbs',10359],
+  ['户外灯 Outdoor Lighting',8994],
+  ['串灯 String Lights',4815],
+  ['浴室灯 Bathroom Lighting',795],
+  ['绳灯 Rope Lights',71]
+];
+var auData=[
+  ['吊灯 Chandeliers',487],
+  ['外壳套件 Housing & Trim',454],
+  ['台灯 Table Lamps',429],
+  ['小夜灯 Night Lights',395],
+  ['书桌灯 Desk Lamps',378],
+  ['落地灯 Floor Lamps',325],
+  ['吊坠灯 Pendant Lights',225]
+];
+
+var uEl=document.getElementById('us-bars');
+usData.forEach(function(d){uEl.innerHTML+=bar(d[0],d[1],33362,'#378ADD',d[1]>=8000);});
+
+var ukEl=document.getElementById('uk-bars');
+ukData.forEach(function(d){ukEl.innerHTML+=bar(d[0],d[1],33362,'#D85A30',d[1]>=5000);});
+
+var auEl=document.getElementById('au-bars');
+auData.forEach(function(d){auEl.innerHTML+=bar(d[0],d[1],487,'#1D9E75',false);});
+</script>
